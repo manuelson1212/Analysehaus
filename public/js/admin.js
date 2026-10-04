@@ -247,6 +247,7 @@ async function studioView(analysis, pack, reload) {
 
   return h('div', { class: 'studio' },
     h('div', { class: 'row' }, generate, h('span', { class: `badge ${pack.status === 'approved' ? 'pub' : ''}` }, `${pack.status} · ${c.provider}`)),
+    c.chart_notes && h('section', { class: 'block' }, h('h2', {}, 'Chart reading (internal, not published)'), h('p', { class: 'muted' }, c.chart_notes)),
     h('section', { class: 'block' }, h('h2', {}, 'TikTok script'),
       h('div', { class: 'field' }, h('span', { class: 'label' }, 'Hook'), hook),
       scenes.map((s, i) => h('div', { class: 'scene' }, h('span', { class: 'label' }, `Scene ${i + 1}`), s.visual, s.voiceover, s.onscreen)),

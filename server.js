@@ -140,7 +140,7 @@ async function api(req, res, url) {
     if (method === 'GET') return json(res, 200, packs.get(id));
     if (method === 'POST') {
       try {
-        return json(res, 200, packs.save(id, await generatePack(a), 'draft'));
+        return json(res, 200, packs.save(id, await generatePack(a, join(UPLOAD_DIR, a.image)), 'draft'));
       } catch (e) {
         if (e instanceof HttpError) throw e;
         throw new HttpError(502, `Agent failed: ${e.message}`);
@@ -149,7 +149,9 @@ async function api(req, res, url) {
     if (method === 'PUT') {
       const body = await readJson(req);
       const status = body.status === 'approved' ? 'approved' : 'draft';
-      return json(res, 200, packs.save(id, finalize(body.content), status));
+      const prev = packs.get(id)?.content;
+      const content = finalize({ ...body.content, provider: prev?.provider, chart_notes: prev?.chart_notes });
+      return json(res, 200, packs.save(id, content, status));
     }
   }
 
