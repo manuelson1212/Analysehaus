@@ -1,11 +1,12 @@
 // Browser-only stand-in for server.js, used by the static demo build (npm run demo:build).
 // Data lives in localStorage (memory fallback). The agent is the same mock provider as on the server.
-import { generate as mock } from '../lib/agent/mock.js';
+import { generate as mock, generatePromo as mockPromo } from '../lib/agent/mock.js';
+import { computeStats } from '../lib/depot.js';
 import { finalize } from '../lib/agent/index.js';
 
 window.__DEMO__ = true;
 window.__DEMO_ROUTER__ = true;
-const KEY = 'apex-wave-demo-v1';
+const KEY = 'apex-wave-demo-v2';
 const DEMO_PASSWORD = 'demo';
 let memory = null;
 
@@ -59,6 +60,13 @@ function drawChart(points, labels, lines, seed, title) {
   return c.toDataURL('image/webp', 0.82).startsWith('data:image/webp') ? c.toDataURL('image/webp', 0.82) : c.toDataURL('image/png');
 }
 
+function proofImg(asset, status, seed) {
+  const win = status === 'hit';
+  const pts = win ? [[0, 40], [0.3, 46], [0.45, 41], [1, 80]] : [[0, 60], [0.35, 52], [0.5, 56], [1, 30]];
+  return drawChart(pts, [[0.45, win ? 41 : 56, 'entry', 0], [1, win ? 80 : 30, win ? 'target' : 'stop', win ? 1 : 0]],
+    [{ v: win ? 80 : 56, color: win ? '#26a69a' : '#ef5350', dash: true, text: win ? 'target' : 'stop' }], seed, `${asset} · ${win ? 'target reached' : 'stopped out'} · SAMPLE PROOF`);
+}
+
 function seedState() {
   const day = (n) => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
   const base = { scenario_alt: '', body: '', fib_levels: '', targets: '', invalidation: '', wave_count: '', scenario_primary: '' };
@@ -84,7 +92,26 @@ function seedState() {
       image: drawChart([[0, 50], [0.3, 70], [0.45, 58], [0.6, 66], [0.75, 60], [1, 63]], [[0.3, 70, '(3)', 1], [0.45, 58, 'a', 0], [0.6, 66, 'b', 1], [0.75, 60, 'c', 0]],
         [{ v: 50, color: '#ef5350', dash: true, text: 'invalid' }], 37, 'SOL/USD · 1H · DEMO CHART') },
   ];
-  return { analyses, packs: {}, nextId: 4, messages: [], nextMsg: 1 };
+  const P = (asset, market, direction, bl, bh, stop, target, entry, exit, status, opened, closed, proof) => ({
+    asset, market, direction, buy_low: bl, buy_high: bh, stop, target, entry_price: entry, exit_price: exit, result_pct: null, status,
+    opened_at: opened == null ? null : day(opened), closed_at: closed == null ? null : day(closed), analysis_id: null, evidence_url: null,
+    note: 'Sample position for the preview. Replace it with your own calls in the admin Depot tab.', evidence: proof ? proofImg(asset, status, proof) : null });
+  const positions = [
+    P('BTC/USD', 'Crypto', 'long', 61000, 62400, 59800, 68400, 61800, null, 'open', 4, null),
+    P('ETH/USD', 'Crypto', 'long', 2900, 3000, 2790, 3260, null, null, 'watching', null, null),
+    P('SOL/USD', 'Crypto', 'long', 138, 144, 131, 165, 141, 165, 'hit', 40, 21, 11),
+    P('ETH/USD', 'Crypto', 'long', 2380, 2450, 2290, 2700, 2410, 2700, 'hit', 52, 33),
+    P('BTC/USD', 'Crypto', 'long', 58200, 59400, 56800, 64500, 58900, 64500, 'hit', 66, 47, 23),
+    P('ETH/USD', 'Crypto', 'long', 2650, 2720, 2580, 2950, 2690, 2580, 'stopped', 30, 26, 37),
+    P('S&P 500', 'Stocks', 'long', 5640, 5690, 5560, 5860, 5665, 5860, 'hit', 71, 55),
+    P('NASDAQ 100', 'Stocks', 'long', 19900, 20150, 19600, 21000, 20020, 21000, 'hit', 78, 60),
+    P('BTC/USD', 'Crypto', 'short', 71500, 72800, 74000, 66500, 72100, 66500, 'hit', 84, 68),
+    P('DAX', 'Stocks', 'long', 18400, 18550, 18150, 19200, 18480, 19200, 'hit', 88, 70),
+    P('XRP/USD', 'Crypto', 'long', 0.48, 0.5, 0.455, 0.58, 0.49, 0.58, 'hit', 92, 74),
+    P('SOL/USD', 'Crypto', 'long', 165, 170, 158, 190, 168, 158, 'stopped', 20, 16),
+  ].map((p, i) => ({ ...p, id: i + 1, created_at: new Date().toISOString() }));
+  const free_until = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10);
+  return { analyses, packs: {}, nextId: 4, messages: [], nextMsg: 1, positions, nextPos: positions.length + 1, config: { free_until, price: 29 }, promo: null };
 }
 
 const ready = (async () => { if (!store.read()) store.write(seedState()); })();
@@ -107,6 +134,26 @@ function parse(b) {
   };
 }
 
+const sortPos = (list) => [...list].sort((a, b) => (b.closed_at || b.opened_at || b.created_at || '').localeCompare(a.closed_at || a.opened_at || a.created_at || '') || b.id - a.id);
+function cfg(st) {
+  const c = st.config || { free_until: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10), price: 29 };
+  return { ...c, days_left: Math.max(0, Math.ceil((Date.parse(`${c.free_until}T00:00:00Z`) - Date.now()) / 864e5)) };
+}
+const numOrNull = (v, name) => { if (v === '' || v == null) return null; const n = Number(v); if (!Number.isFinite(n)) throw new Err(400, `${name} must be a number`); return n; };
+function parsePos(b) {
+  const t = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+  if (!t(b.asset, 40)) throw new Err(400, 'asset is required');
+  if (!MARKETS.includes(b.market)) throw new Err(400, 'market must be Crypto or Stocks');
+  const buy_low = numOrNull(b.buy_low, 'Buy zone low'), buy_high = numOrNull(b.buy_high, 'Buy zone high');
+  if (buy_low != null && buy_high != null && buy_low > buy_high) throw new Err(400, 'Buy zone low must not exceed buy zone high');
+  const url = t(b.evidence_url, 300);
+  if (url && !/^https?:\/\/\S+$/.test(url)) throw new Err(400, 'Evidence link must start with http:// or https://');
+  const status = ['watching', 'open', 'hit', 'stopped'].includes(b.status) ? b.status : 'watching';
+  return { asset: t(b.asset, 40), market: b.market, direction: b.direction === 'short' ? 'short' : 'long', buy_low, buy_high,
+    stop: numOrNull(b.stop, 'Stop'), target: numOrNull(b.target, 'Target'), entry_price: numOrNull(b.entry_price, 'Entry price'), exit_price: numOrNull(b.exit_price, 'Exit price'),
+    result_pct: numOrNull(b.result_pct, 'Result'), status, opened_at: t(b.opened_at, 10) || null, closed_at: t(b.closed_at, 10) || null,
+    note: t(b.note, 1000), evidence_url: url || null, analysis_id: b.analysis_id === '' || b.analysis_id == null ? null : Number(b.analysis_id) };
+}
 const byDate = (a, b) => (b.analysis_date.localeCompare(a.analysis_date)) || b.id - a.id;
 
 async function route(method, path, body) {
@@ -130,6 +177,15 @@ async function route(method, path, body) {
     st.messages.unshift({ ...m, id: st.nextMsg++, created_at: now().slice(0, 16).replace('T', ' ') });
     store.write(st); return { ok: true };
   }
+  if (method === 'GET' && path === '/api/config') return cfg(st);
+  if (method === 'GET' && path === '/api/depot') return { positions: sortPos(st.positions), stats: computeStats(st.positions) };
+  if (method === 'POST' && path === '/api/signup') {
+    const email = typeof body.email === 'string' ? body.email.trim().slice(0, 120) : '';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) throw new Err(400, 'Please enter a valid email address');
+    st.messages ||= []; st.nextMsg ||= 1;
+    st.messages.unshift({ id: st.nextMsg++, name: '(free access signup)', email, topic: 'Free access signup', message: 'Requested free access.', created_at: now().slice(0, 16).replace('T', ' ') });
+    store.write(st); return { ok: true };
+  }
   if (method === 'POST' && path === '/api/admin/login') {
     if (body.password !== DEMO_PASSWORD) throw new Err(401, 'Wrong password. In this demo the password is "demo".');
     session.set(true); return { ok: true };
@@ -141,6 +197,42 @@ async function route(method, path, body) {
 
   if (method === 'GET' && path === '/api/admin/analyses') return [...st.analyses].sort(byDate);
   if (method === 'GET' && path === '/api/admin/messages') return st.messages || [];
+  if (method === 'PUT' && path === '/api/admin/config') {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(body.free_until || '')) throw new Err(400, 'Free access end date is required');
+    const price = Number(body.price);
+    if (!Number.isFinite(price) || price < 0) throw new Err(400, 'Price must be 0 or more');
+    st.config = { free_until: body.free_until, price }; store.write(st); return cfg(st);
+  }
+  if (method === 'GET' && path === '/api/admin/agent-status') return { provider: 'mock', model: null, key_configured: false, fallback: true };
+  if (method === 'POST' && path === '/api/admin/agent-test') return { ok: true, provider: 'mock', message: 'Preview mode: the mock agent is active. No AI call was made. On your own server, set AGENT_PROVIDER=claude to use the real agent.' };
+  if (path === '/api/admin/promo') {
+    if (method === 'GET') return st.promo ?? null;
+    if (method === 'POST') {
+      const stats = computeStats(st.positions), c = cfg(st);
+      const facts = { free_days_left: c.days_left, hit_rate: stats.closed ? stats.hit_rate : null, hits: stats.hits, closed: stats.closed };
+      st.promo = { content: finalize({ ...(await mockPromo({ facts })), provider: 'mock' }), status: 'draft', updated_at: now() }; store.write(st); return st.promo;
+    }
+    if (method === 'PUT') {
+      const prev = st.promo?.content;
+      st.promo = { content: finalize({ ...body.content, provider: prev?.provider, chart_notes: prev?.chart_notes }), status: body.status === 'approved' ? 'approved' : 'draft', updated_at: now() }; store.write(st); return st.promo;
+    }
+  }
+  if (method === 'GET' && path === '/api/admin/positions') return { positions: sortPos(st.positions), stats: computeStats(st.positions) };
+  if (method === 'POST' && path === '/api/admin/positions') {
+    const d = parsePos(body);
+    const p = { ...d, id: st.nextPos++, evidence: /^data:image\//.test(body.evidence || '') ? body.evidence : null, created_at: now() };
+    st.positions.push(p); store.write(st); return p;
+  }
+  let pm = /^\/api\/admin\/positions\/(\d+)$/.exec(path);
+  if (pm) {
+    const i = st.positions.findIndex((x) => x.id === +pm[1]);
+    if (i < 0) throw new Err(404, 'Not found');
+    if (method === 'PUT') {
+      const d = parsePos(body);
+      st.positions[i] = { ...st.positions[i], ...d, evidence: /^data:image\//.test(body.evidence || '') ? body.evidence : st.positions[i].evidence }; store.write(st); return st.positions[i];
+    }
+    if (method === 'DELETE') { st.positions.splice(i, 1); store.write(st); return { ok: true }; }
+  }
   m = /^\/api\/admin\/messages\/(\d+)$/.exec(path);
   if (m && method === 'DELETE') { st.messages = (st.messages || []).filter((x) => x.id !== +m[1]); store.write(st); return { ok: true }; }
   if (method === 'POST' && path === '/api/admin/analyses') {

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live Depot · Apex Wave Capital</title>
+  <meta name="description" content="A simulated live depot that tracks every call with buy zone, stop, target and proof.">
+  <meta name="theme-color" content="#08090b">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body data-page="depot">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header" id="site-header"></header>
+  <div class="free-bar" id="free-bar"></div>
+  <main id="main" class="wrap">
+    <section class="page-head">
+      <p class="eyebrow">Live demo depot</p>
+      <h1>Every call, tracked in the open.</h1>
+      <p class="lede">A simulated depot. Buy zone, stop and target are set before the entry, and wins and losses stay on the record.</p>
+      <div class="notice small">Simulation without real money. Not a recommendation to buy or sell.</div>
+    </section>
+    <section class="tiles">
+      <div class="tile"><span class="label">Hit rate</span><b id="t-rate">–</b><span id="t-rate-sub" class="muted">–</span></div>
+      <div class="tile"><span class="label">Average result</span><b id="t-avg">–</b><span class="muted">per closed call</span></div>
+      <div class="tile"><span class="label">Open</span><b id="t-open">–</b><span class="muted">positions running</span></div>
+      <div class="tile"><span class="label">Watching</span><b id="t-watch">–</b><span class="muted">waiting for the buy zone</span></div>
+    </section>
+    <div class="filters" id="filters">
+      <button class="chip on" data-status="">All</button>
+      <button class="chip" data-status="watching">Watching</button>
+      <button class="chip" data-status="open">Open</button>
+      <button class="chip" data-status="hit">Target hit</button>
+      <button class="chip" data-status="stopped">Stopped out</button>
+    </div>
+    <div class="panel" id="depot-table" aria-live="polite"></div>
+    <p class="fine depot-note">Hit rate = closed calls that reached their target before the stop. Result is measured from entry to exit price. Results may be rounded.</p>
+  </main>
+  <footer class="site-footer" id="site-footer"></footer>
+  <script type="module" src="/js/layout.js"></script>
+  <script type="module" src="/js/depot.js"></script>
+</body>
+</html>

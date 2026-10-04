@@ -2,13 +2,14 @@ import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { join, extname, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { analyses, packs, messages, UPLOAD_DIR } from './lib/db.js';
+import { analyses, packs, messages, positions, kv, UPLOAD_DIR } from './lib/db.js';
+import { computeStats } from './lib/depot.js';
 import {
   ADMIN_PASSWORD, PASSWORD_GENERATED, checkPassword, makeToken, verifyToken,
   parseCookies, sessionCookie, clearCookie, loginAllowed, recordLogin,
 } from './lib/auth.js';
-import { HttpError, parseAnalysis, parseContact, saveImage, deleteImage } from './lib/validate.js';
-import { generatePack, finalize } from './lib/agent/index.js';
+import { HttpError, parseAnalysis, parseContact, parsePosition, parseSettings, parseSignup, saveImage, deleteImage } from './lib/validate.js';
+import { generatePack, generatePromoPack, finalize, testAgent, providerName } from './lib/agent/index.js';
 
 const PUBLIC_DIR = join(fileURLToPath(new URL('.', import.meta.url)), 'public');
 const PORT = Number(process.env.PORT || 3000);
@@ -49,6 +50,41 @@ async function readJson(req) {
 }
 
 const contactHits = new Map();
+function rateLimit(ip) {
+  const now = Date.now();
+  const hits = (contactHits.get(ip) || []).filter((t) => now - t < 3600_000);
+  if (hits.length >= 5) throw new HttpError(429, 'Too many messages. Please try again later.');
+  contactHits.set(ip, [...hits, now]);
+}
+
+// Free access window: set once on first start (today + 30 days) and editable in the admin settings.
+function getConfig() {
+  let free_until = kv.get('free_until');
+  if (!free_until) {
+    free_until = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10);
+    kv.set('free_until', free_until);
+  }
+  const days_left = Math.max(0, Math.ceil((Date.parse(`${free_until}T00:00:00Z`) - Date.now()) / 864e5));
+  return { free_until, days_left, price: kv.get('price', 29) };
+}
+
+const depotView = () => { const list = positions.list(); return { positions: list, stats: computeStats(list) }; };
+
+function promoFacts() {
+  const { stats } = depotView(), cfg = getConfig();
+  return {
+    free_days_left: cfg.days_left, price_after_eur_per_month: cfg.price, published_analyses: analyses.list(true).length,
+    hit_rate: stats.closed ? stats.hit_rate : null, hits: stats.closed ? stats.hits : null, closed: stats.closed || null,
+    depot_is_simulated: 'yes, no real money',
+  };
+}
+
+const promoGet = () => kv.get('promo_pack');
+function promoSave(content, status) {
+  const row = { content, status, updated_at: new Date().toISOString() };
+  kv.set('promo_pack', row);
+  return row;
+}
 const isAdmin = (req) => verifyToken(parseCookies(req.headers.cookie).ah_session);
 const publicView = ({ updated_at, ...a }) => a;
 
@@ -84,14 +120,19 @@ async function api(req, res, url) {
 
   // Contact form (public, rate limited per IP: 5 messages per hour)
   if (method === 'POST' && path === '/api/contact') {
-    const now = Date.now();
-    const hits = (contactHits.get(ip) || []).filter((t) => now - t < 3600_000);
-    if (hits.length >= 5) throw new HttpError(429, 'Too many messages. Please try again later.');
     const data = parseContact(await readJson(req));
+    rateLimit(ip);
     messages.create(data);
-    contactHits.set(ip, [...hits, now]);
     return json(res, 201, { ok: true });
   }
+  if (method === 'POST' && path === '/api/signup') {
+    const data = parseSignup(await readJson(req));
+    rateLimit(ip);
+    messages.create(data);
+    return json(res, 201, { ok: true });
+  }
+  if (method === 'GET' && path === '/api/config') return json(res, 200, getConfig());
+  if (method === 'GET' && path === '/api/depot') return json(res, 200, depotView());
 
   // Auth
   if (method === 'POST' && path === '/api/admin/login') {
@@ -115,6 +156,57 @@ async function api(req, res, url) {
 
   if (method === 'GET' && path === '/api/admin/analyses') return json(res, 200, analyses.list(false));
   if (method === 'GET' && path === '/api/admin/messages') return json(res, 200, messages.list());
+
+  // Settings, agent status and test
+  if (method === 'PUT' && path === '/api/admin/config') {
+    const d = parseSettings(await readJson(req));
+    kv.set('free_until', d.free_until); kv.set('price', d.price);
+    return json(res, 200, getConfig());
+  }
+  if (method === 'GET' && path === '/api/admin/agent-status') {
+    return json(res, 200, { provider: providerName(), model: providerName() === 'claude' ? (process.env.CLAUDE_MODEL || 'claude-opus-5-5') : null,
+      key_configured: Boolean(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN), fallback: process.env.CLAUDE_FALLBACK !== 'off' });
+  }
+  if (method === 'POST' && path === '/api/admin/agent-test') {
+    try { return json(res, 200, await testAgent()); }
+    catch (e) { throw new HttpError(502, e.message); }
+  }
+
+  // Website promo pack (ad for the site itself)
+  if (path === '/api/admin/promo') {
+    if (method === 'GET') return json(res, 200, promoGet());
+    if (method === 'POST') {
+      try { return json(res, 200, promoSave(await generatePromoPack(promoFacts()), 'draft')); }
+      catch (e) { throw new HttpError(502, `Agent failed: ${e.message}`); }
+    }
+    if (method === 'PUT') {
+      const body = await readJson(req), prev = promoGet()?.content;
+      return json(res, 200, promoSave(finalize({ ...body.content, provider: prev?.provider, chart_notes: prev?.chart_notes }), body.status === 'approved' ? 'approved' : 'draft'));
+    }
+  }
+
+  // Live demo depot
+  if (method === 'GET' && path === '/api/admin/positions') return json(res, 200, depotView());
+  if (method === 'POST' && path === '/api/admin/positions') {
+    const body = await readJson(req), data = parsePosition(body);
+    if (data.analysis_id != null && !analyses.get(data.analysis_id)) throw new HttpError(400, 'Linked analysis does not exist');
+    data.evidence = body.evidence ? saveImage(body.evidence) : null;
+    return json(res, 201, positions.create(data));
+  }
+  let pm = /^\/api\/admin\/positions\/(\d+)$/.exec(path);
+  if (pm) {
+    const id = Number(pm[1]), existing = positions.get(id);
+    if (!existing) throw new HttpError(404, 'Not found');
+    if (method === 'PUT') {
+      const body = await readJson(req), data = parsePosition(body);
+      if (data.analysis_id != null && !analyses.get(data.analysis_id)) throw new HttpError(400, 'Linked analysis does not exist');
+      data.evidence = body.evidence ? saveImage(body.evidence) : existing.evidence;
+      const updated = positions.update(id, data);
+      if (data.evidence !== existing.evidence) deleteImage(existing.evidence);
+      return json(res, 200, updated);
+    }
+    if (method === 'DELETE') { positions.remove(id); deleteImage(existing.evidence); return json(res, 200, { ok: true }); }
+  }
   m = /^\/api\/admin\/messages\/(\d+)$/.exec(path);
   if (m && method === 'DELETE') { messages.remove(Number(m[1])); return json(res, 200, { ok: true }); }
 
@@ -184,8 +276,8 @@ const server = createServer(async (req, res) => {
       return await serveFile(res, join(UPLOAD_DIR, name), 'public, max-age=31536000, immutable');
     }
 
-    const pages = { '/': '/index.html', '/approach': '/approach.html', '/analyses': '/analyses.html', '/analysis': '/analysis.html', '/about': '/about.html',
-      '/pricing': '/pricing.html', '/support': '/support.html', '/admin': '/admin.html' };
+    const pages = { '/': '/index.html', '/analyses': '/analyses.html', '/analysis': '/analysis.html',
+      '/pricing': '/pricing.html', '/support': '/support.html', '/depot': '/depot.html', '/admin': '/admin.html' };
     const clean = pages[url.pathname] || url.pathname;
     const file = normalize(join(PUBLIC_DIR, clean));
     if (!file.startsWith(PUBLIC_DIR + sep)) return send(res, 403, 'Forbidden');

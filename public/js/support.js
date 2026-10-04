@@ -18,5 +18,5 @@ form.addEventListener('submit', async (e) => {
   send.disabled = false;
 });
 
-// Pricing page links here with the waitlist topic.
-if (/waitlist/.test(location.search)) form.elements.topic.value = 'Membership waitlist';
+
+

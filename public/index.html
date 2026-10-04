@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Apex Wave Capital · Elliott Wave, Bitcoin and Macro Research</title>
-  <meta name="description" content="Independent research on Bitcoin and global markets: Elliott Wave structure read through macro monetary theory.">
+  <title>Apex Wave Capital · Elliott Wave Analysis</title>
+  <meta name="description" content="Elliott Wave analyses with buy zones, targets and invalidation levels, plus a live demo depot with proof. First 30 days free.">
   <meta name="theme-color" content="#08090b">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/style.css">
@@ -12,90 +12,64 @@
 <body data-page="home">
   <a class="skip" href="#main">Skip to content</a>
   <header class="site-header" id="site-header"></header>
+  <div class="free-bar" id="free-bar"></div>
   <main id="main">
     <section class="hero">
       <canvas class="atmo" id="atmo" aria-hidden="true"></canvas>
       <div class="hero-veil" aria-hidden="true"></div>
       <div class="wrap hero-inner">
-        <p class="eyebrow">Elliott Wave · Bitcoin · Macro liquidity</p>
-        <h1>Structure in price.<br><em>Direction in money.</em></h1>
-        <p class="lede">Apex Wave Capital researches Bitcoin and global markets through Elliott Wave structure and macro monetary theory. Every analysis names the level that proves it wrong.</p>
+        <p class="pill"><span class="live-dot" aria-hidden="true"></span><span id="free-pill">First 30 days free</span></p>
+        <h1>Elliott Wave analysis<br><em>you can check.</em></h1>
+        <p class="lede">Every analysis shows the buy zone, the target and the level that proves it wrong. Every call is tracked in a live demo depot, wins and losses included.</p>
         <div class="cta-row">
-          <a class="btn lg" data-route="analyses" href="/analyses">Read the research</a>
-          <a class="btn lg ghost" data-route="approach" href="/approach">Our approach</a>
+          <a class="btn lg" data-route="pricing" href="/pricing">Start free access</a>
+          <a class="btn lg ghost" data-route="depot" href="/depot">See the live depot</a>
         </div>
       </div>
-      <a class="scroll-cue" href="#lenses" aria-label="Scroll to content"><span></span></a>
     </section>
 
     <section class="strip">
       <div class="wrap strip-grid">
+        <div><b id="rate">–</b><span id="rate-sub">Loading…</span></div>
+        <div><b id="n-open">–</b><span>open positions in the depot</span></div>
         <div><b id="count">–</b><span>published analyses</span></div>
-        <div><b>21 M</b><span>hard cap on Bitcoin supply</span></div>
-        <div><b>4</b><span>halvings completed since 2012</span></div>
-        <div><b>1 level</b><span>named as invalidation in every analysis</span></div>
+        <div><b id="days">30</b><span>days of free access</span></div>
       </div>
-    </section>
-
-    <section class="section wrap" id="lenses">
-      <div class="section-head reveal"><p class="eyebrow">Our framework</p><h2>Three lenses, one view of the market.</h2></div>
-      <div class="pillars">
-        <article class="pillar reveal">
-          <svg class="p-ico ico-wave" viewBox="0 0 64 64" aria-hidden="true"><path d="M4 50 L18 26 L26 38 L44 8 L52 24 L60 14"/><circle cx="18" cy="26" r="3"/><circle cx="44" cy="8" r="3"/></svg>
-          <p class="label">Structure</p><h3>Elliott Wave</h3>
-          <p>Markets move in five-wave impulses and three-wave corrections. We count the structure, define the scenarios and name the price that invalidates the count.</p>
-        </article>
-        <article class="pillar reveal">
-          <svg class="p-ico ico-supply" viewBox="0 0 64 64" aria-hidden="true"><rect x="6" y="8" width="10" height="48"/><rect x="21" y="20" width="10" height="36"/><rect x="36" y="32" width="10" height="24"/><rect x="51" y="42" width="8" height="14"/></svg>
-          <p class="label">Scarcity</p><h3>Bitcoin</h3>
-          <p>A fixed supply of 21 million coins and an issuance that halves about every four years. Bitcoin is money with a published schedule anyone can verify.</p>
-        </article>
-        <article class="pillar reveal">
-          <svg class="p-ico ico-liq" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="5"/><circle cx="32" cy="32" r="14"/><circle cx="32" cy="32" r="24"/></svg>
-          <p class="label">Liquidity</p><h3>Macro money</h3>
-          <p>Credit, central-bank balance sheets and real yields decide how much capital chases risk. We read monetary conditions as the tide beneath the waves.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="section dark-band">
-      <div class="wrap">
-        <div class="section-head reveal"><p class="eyebrow">Wave lab</p><h2>See the structure.</h2>
-          <p class="muted">An idealised impulse and correction. Hover a wave for its rule and the ratios measured on this drawing.</p></div>
-        <div class="wave-card" id="wave-card"><div id="wave"></div></div>
-      </div>
-    </section>
-
-    <section class="section wrap">
-      <div class="section-head reveal"><p class="eyebrow">Monetary theory</p><h2>Scarcity is scheduled.<br>Liquidity is discretionary.</h2>
-        <p class="muted">Bitcoin issues new coins on a rule anyone can verify. Fiat money is created by credit and policy, and its pace changes with decisions. Where the two meet, cycles take shape. Hover the chart to read the schedule.</p></div>
-      <div class="wave-card sup-card reveal"><div id="supply"></div></div>
-    </section>
-
-    <section class="section dark-band">
-      <div class="wrap rules">
-        <div class="section-head reveal"><p class="eyebrow">The discipline</p><h2>Three rules every impulse must obey.</h2>
-          <p class="muted">If one is broken, the count is wrong. Hover a rule to see it in the wave lab above.</p></div>
-        <ol class="rule-list">
-          <li class="rule reveal" tabindex="0" data-wave="2"><span class="rule-n">Wave 2</span><p>never retraces more than 100% of wave 1.</p></li>
-          <li class="rule reveal" tabindex="0" data-wave="3"><span class="rule-n">Wave 3</span><p>is never the shortest of the three impulse waves 1, 3 and 5.</p></li>
-          <li class="rule reveal" tabindex="0" data-wave="4"><span class="rule-n">Wave 4</span><p>never enters the price territory of wave 1.</p></li>
-        </ol>
-      </div>
+      <p class="wrap strip-note">Hit rate = closed calls that reached their target before the stop. Simulated demo depot, no real money. The sample size is always shown.</p>
     </section>
 
     <section class="section wrap">
       <div class="section-head row-between reveal">
-        <div><p class="eyebrow">Latest research</p><h2>Recent analyses</h2></div>
+        <div><p class="eyebrow">Research</p><h2>Latest analyses</h2></div>
         <a class="link-arrow" data-route="analyses" href="/analyses">All research →</a>
       </div>
       <div class="grid" id="latest" aria-live="polite"></div>
     </section>
 
-    <section class="wrap">
-      <div class="cta-band reveal">
-        <div><h2>Follow the structure with us.</h2><p>Join the membership waitlist. No payment is taken yet.</p></div>
-        <a class="btn lg" data-route="pricing" href="/pricing">View membership</a>
+    <section class="section dark-band">
+      <div class="wrap">
+        <div class="section-head row-between reveal">
+          <div><p class="eyebrow">Live demo depot</p><h2>Every call on the record.</h2>
+            <p class="muted">Buy zone, stop and target are set before the entry. Proof is attached to each position.</p></div>
+          <a class="link-arrow" data-route="depot" href="/depot">Open the depot →</a>
+        </div>
+        <div class="panel reveal" id="depot-preview"></div>
+      </div>
+    </section>
+
+    <section class="section wrap">
+      <div class="free-card reveal">
+        <div>
+          <p class="eyebrow">Founding access</p>
+          <h2>The first 30 days are free.</h2>
+          <p class="lede">Use everything and tell us what to improve. After the free period, membership costs <b id="price-after">€29</b> per month.</p>
+        </div>
+        <form class="signup-form" novalidate>
+          <label class="label" for="s-email">Your email</label>
+          <div class="signup-row"><input type="text" id="s-email" name="email" inputmode="email" autocomplete="email" placeholder="you@example.com" maxlength="120"><button class="btn" type="submit">Start free</button></div>
+          <div class="signup-msg"></div>
+          <p class="fine">No payment details. We email you before the free period ends.</p>
+        </form>
       </div>
     </section>
   </main>

@@ -1,41 +1,30 @@
-// Shared site chrome: header, footer and scroll reveal. Page markup stays static HTML.
-import { h, bindLinks, routeUrl } from './dom.js';
+// Shared site chrome: header with always-visible navigation, free-access bar, footer, scroll reveal.
+import { h, api, bindLinks, routeUrl } from './dom.js';
 
-const NAV = [['home', 'Home'], ['approach', 'Approach'], ['analyses', 'Research'], ['pricing', 'Membership'], ['about', 'About'], ['support', 'Contact']];
+const NAV = [['home', 'Home'], ['analyses', 'Research'], ['depot', 'Live Depot'], ['pricing', 'Pricing'], ['support', 'Contact']];
 
 function header() {
-  const links = NAV.map(([key, label]) => h('a', { class: 'nav-link', 'data-route': key, href: routeUrl(key) }, label));
-  const toggle = h('button', { class: 'burger', type: 'button', 'aria-label': 'Menu', 'aria-expanded': 'false', 'aria-controls': 'main-nav' },
-    h('span'), h('span'), h('span'));
-  const nav = h('nav', { class: 'nav', id: 'main-nav', 'aria-label': 'Main' }, links,
-    h('a', { class: 'btn sm nav-cta', 'data-route': 'pricing', href: routeUrl('pricing') }, 'Get access'));
-  toggle.addEventListener('click', () => {
-    const open = !document.documentElement.classList.contains('nav-open');
-    document.documentElement.classList.toggle('nav-open', open);
-    toggle.setAttribute('aria-expanded', String(open));
-  });
-  nav.addEventListener('click', (e) => { if (e.target.closest('a')) document.documentElement.classList.remove('nav-open'); });
   return h('div', { class: 'wrap bar' },
     h('a', { class: 'brand', 'data-route': 'home', href: routeUrl('home') }, h('span', { class: 'brand-mark', 'aria-hidden': 'true' }), h('span', {}, 'Apex Wave ', h('b', {}, 'Capital'))),
-    nav, toggle);
+    h('nav', { class: 'nav', id: 'main-nav', 'aria-label': 'Main' },
+      NAV.map(([key, label]) => h('a', { class: 'nav-link', 'data-route': key, href: routeUrl(key) }, label))),
+    h('a', { class: 'btn sm nav-cta', 'data-route': 'pricing', href: routeUrl('pricing') }, 'Start free'));
 }
 
 function footer() {
-  const col = (title, items) => h('div', {}, h('div', { class: 'label' }, title),
-    items.map(([key, label]) => h('a', { 'data-route': key, href: routeUrl(key) }, label)));
   return h('div', { class: 'wrap' },
-    h('div', { class: 'foot-grid' },
-      h('div', { class: 'foot-brand' },
-        h('a', { class: 'brand', 'data-route': 'home', href: routeUrl('home') }, h('span', { class: 'brand-mark', 'aria-hidden': 'true' }), h('span', {}, 'Apex Wave ', h('b', {}, 'Capital'))),
-        h('p', { class: 'muted' }, 'Independent research on Bitcoin and global markets: Elliott Wave structure read through macro monetary theory.')),
-      col('Explore', [['home', 'Home'], ['approach', 'Approach'], ['analyses', 'Research'], ['pricing', 'Membership']]),
-      col('Company', [['about', 'About'], ['support', 'Contact'], ['admin', 'Admin']])),
-    h('p', { class: 'fineprint' }, 'Educational market analysis only. Not financial advice, not an offer or a solicitation. Trading involves substantial risk of loss; past patterns do not guarantee future results.'));
+    h('div', { class: 'foot-row' },
+      h('a', { class: 'brand', 'data-route': 'home', href: routeUrl('home') }, h('span', { class: 'brand-mark', 'aria-hidden': 'true' }), h('span', {}, 'Apex Wave ', h('b', {}, 'Capital'))),
+      h('nav', { class: 'foot-nav', 'aria-label': 'Footer' }, NAV.map(([key, label]) => h('a', { 'data-route': key, href: routeUrl(key) }, label)), h('a', { 'data-route': 'admin', href: routeUrl('admin') }, 'Admin'))),
+    h('p', { class: 'fineprint' }, 'Educational market analysis only. Not financial advice, not an offer or a solicitation. The live depot is a simulation without real money. Trading involves substantial risk of loss; past results do not guarantee future results.'));
 }
 
 export function setActive(page) {
   const key = { detail: 'analyses' }[page] || page;
-  document.querySelectorAll('.nav-link').forEach((a) => a.classList.toggle('on', a.dataset.route === key));
+  document.querySelectorAll('.nav-link').forEach((a) => {
+    a.classList.toggle('on', a.dataset.route === key);
+    if (a.dataset.route === key) a.scrollIntoView?.({ inline: 'center', block: 'nearest' });
+  });
   document.body.dataset.page = page;
 }
 
@@ -52,12 +41,27 @@ export function initReveal(root = document) {
   setTimeout(() => items.forEach((el) => el.classList.add('in')), 2500); // failsafe
 }
 
+// Slim bar on every page: how long the free access lasts.
+async function freeBar() {
+  const host = document.getElementById('free-bar');
+  if (!host) return;
+  try {
+    const c = await api('/api/config');
+    window.__config = c;
+    host.replaceChildren(c.days_left > 0
+      ? h('div', { class: 'wrap free-inner' }, h('span', { class: 'live-dot', 'aria-hidden': 'true' }), h('b', {}, `${c.days_left} days of free access left`), h('span', { class: 'muted' }, `ends ${c.free_until}. Tell us what to improve.`), h('a', { 'data-route': 'pricing', href: routeUrl('pricing') }, 'Start free →'))
+      : h('div', { class: 'wrap free-inner' }, h('b', {}, 'Membership is now paid'), h('a', { 'data-route': 'pricing', href: routeUrl('pricing') }, 'See pricing →')));
+    bindLinks(host);
+  } catch { host.replaceChildren(); }
+}
+
 export function mountLayout(page) {
   document.getElementById('site-header')?.replaceChildren(header());
   document.getElementById('site-footer')?.replaceChildren(footer());
   setActive(page);
   bindLinks(document);
   initReveal(document);
+  freeBar();
 }
 
 window.__layout = { mountLayout, setActive, initReveal, bindLinks };

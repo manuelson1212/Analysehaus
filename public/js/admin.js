@@ -1,4 +1,5 @@
 import { h, api, imgUrl, detailUrl } from './dom.js';
+import { STATUS } from './depot-ui.js';
 import { fileToWebp, loadImage, renderCarouselSlide, renderTikTokCover, canvasToBlob } from './imaging.js';
 import { makeZip } from './zip.js';
 
@@ -32,9 +33,9 @@ async function logout() {
 
 /* ---------- Shell ---------- */
 function shell(content) {
-  const tab = (id, label) => h('button', { class: `tab ${current.tab === id ? 'on' : ''}`, onclick: () => { current = { tab: id, editId: null, studioId: id === 'studio' ? current.studioId : null }; render(); } }, label);
+  const tab = (id, label) => h('button', { class: `tab ${current.tab === id ? 'on' : ''}`, onclick: () => { current = { tab: id, editId: null, positionId: null, studioId: id === 'studio' ? current.studioId : null }; render(); } }, label);
   app.replaceChildren(
-    h('div', { class: 'tabs', role: 'tablist' }, tab('new', current.editId ? 'Edit analysis' : 'New analysis'), tab('list', 'Analyses'), tab('studio', 'Content studio'), tab('inbox', 'Inbox'),
+    h('div', { class: 'tabs', role: 'tablist' }, tab('new', current.editId ? 'Edit analysis' : 'New analysis'), tab('list', 'Analyses'), tab('depot', 'Depot'), tab('studio', 'Content studio'), tab('agent', 'AI agent'), tab('inbox', 'Inbox'), tab('settings', 'Settings'),
       h('span', { class: 'tabs-spacer' }), h('button', { class: 'tab', onclick: logout }, 'Log out')),
     content);
 }
@@ -43,6 +44,9 @@ function render() {
   if (current.tab === 'new') return renderForm();
   if (current.tab === 'list') return renderList();
   if (current.tab === 'inbox') return renderInbox();
+  if (current.tab === 'depot') return renderDepot();
+  if (current.tab === 'agent') return renderAgent();
+  if (current.tab === 'settings') return renderSettings();
   return renderStudio();
 }
 
@@ -142,6 +146,145 @@ async function renderList(flash, saved) {
       : h('div', { class: 'empty' }, 'No analyses yet. Create your first one.')));
 }
 
+/* ---------- Depot ---------- */
+// Accepts 61800, 61,800.50 and 61800,5 (decimal comma).
+function toNum(v) {
+  let t = String(v).trim().replace(/\s/g, '');
+  if (!t) return '';
+  if (t.includes(',') && t.includes('.')) t = t.lastIndexOf(',') > t.lastIndexOf('.') ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '');
+  else if (t.includes(',')) t = t.replace(',', '.');
+  return t;
+}
+
+async function renderDepot(flash) {
+  shell(h('p', { class: 'muted' }, 'Loading…'));
+  const [{ positions, stats }, analyses] = await Promise.all([api('/api/admin/positions'), api('/api/admin/analyses')]);
+  const editing = current.positionId ? positions.find((p) => p.id === current.positionId) : null;
+  const e = editing || {};
+  let evidence = null;
+  const msg = h('div');
+  const f = {};
+  const num = (name, label, ph) => { f[name] = h('input', { type: 'text', id: `d-${name}`, inputmode: 'decimal', placeholder: ph, value: e[name] ?? '' }); return h('div', { class: 'field' }, h('label', { class: 'label', for: `d-${name}` }, label), f[name]); };
+  const sel = (name, label, opts) => { f[name] = h('select', { id: `d-${name}` }, opts.map(([v, l]) => h('option', { value: v, selected: (e[name] ?? opts[0][0]) === v }, l))); return h('div', { class: 'field' }, h('label', { class: 'label', for: `d-${name}` }, label), f[name]); };
+  f.asset = h('input', { type: 'text', id: 'd-asset', maxlength: 40, placeholder: 'BTC/USD', value: e.asset ?? '', required: true });
+  f.opened_at = h('input', { type: 'date', id: 'd-opened', value: e.opened_at ?? '' });
+  f.closed_at = h('input', { type: 'date', id: 'd-closed', value: e.closed_at ?? '' });
+  f.note = h('textarea', { id: 'd-note', placeholder: 'Why this zone? What happened?' }, e.note ?? '');
+  f.evidence_url = h('input', { type: 'text', id: 'd-evurl', placeholder: 'https://… (TradingView idea, tweet, exchange record)', value: e.evidence_url ?? '' });
+  f.analysis_id = h('select', { id: 'd-analysis' }, h('option', { value: '' }, 'None'), analyses.map((a) => h('option', { value: a.id, selected: e.analysis_id === a.id }, `${a.asset} · ${a.timeframe} · ${a.analysis_date}`)));
+  const file = h('input', { type: 'file', accept: 'image/png,image/jpeg,image/webp', id: 'd-file' });
+  file.addEventListener('change', async () => { if (file.files[0]) evidence = await fileToWebp(file.files[0]); });
+  const submit = h('button', { class: 'btn', type: 'submit' }, editing ? 'Save position' : 'Add position');
+
+  const form = h('form', { class: 'panel form', onsubmit: async (ev) => {
+    ev.preventDefault(); submit.disabled = true;
+    const body = {
+      asset: f.asset.value, market: f.market.value, direction: f.direction.value, status: f.status.value,
+      buy_low: toNum(f.buy_low.value), buy_high: toNum(f.buy_high.value), stop: toNum(f.stop.value), target: toNum(f.target.value),
+      entry_price: toNum(f.entry_price.value), exit_price: toNum(f.exit_price.value), result_pct: toNum(f.result_pct.value),
+      opened_at: f.opened_at.value, closed_at: f.closed_at.value, note: f.note.value, evidence_url: f.evidence_url.value,
+      analysis_id: f.analysis_id.value, evidence: evidence || undefined,
+    };
+    try {
+      if (editing) await api(`/api/admin/positions/${editing.id}`, { method: 'PUT', body });
+      else await api('/api/admin/positions', { method: 'POST', body });
+      current.positionId = null; await renderDepot(`Saved ${body.asset}. It is visible on the public depot page.`);
+    } catch (err) { msg.replaceChildren(notice('err', err.message)); submit.disabled = false; }
+  } },
+  h('h2', {}, editing ? `Edit ${editing.asset}` : 'Add a position'),
+  h('div', { class: 'two three' }, h('div', { class: 'field' }, h('label', { class: 'label', for: 'd-asset' }, 'Asset'), f.asset),
+    sel('market', 'Market', [['Crypto', 'Crypto'], ['Stocks', 'Stocks']]), sel('direction', 'Direction', [['long', 'Long'], ['short', 'Short']])),
+  h('div', { class: 'two' }, num('buy_low', 'Buy zone from', '61000'), num('buy_high', 'Buy zone to', '62400')),
+  h('div', { class: 'two' }, num('stop', 'Stop (invalidation)', '59800'), num('target', 'Target', '68400')),
+  h('div', { class: 'two three' }, sel('status', 'Status', [['watching', 'Watching (not entered)'], ['open', 'Open'], ['hit', 'Target hit'], ['stopped', 'Stopped out']]),
+    h('div', { class: 'field' }, h('label', { class: 'label', for: 'd-opened' }, 'Opened'), f.opened_at), h('div', { class: 'field' }, h('label', { class: 'label', for: 'd-closed' }, 'Closed'), f.closed_at)),
+  h('div', { class: 'two three' }, num('entry_price', 'Entry price', '61800'), num('exit_price', 'Exit price', '68400'), num('result_pct', 'Result % (optional)', 'auto')),
+  h('p', { class: 'fine' }, 'Result % is calculated from entry and exit price if you leave it empty.'),
+  h('div', { class: 'field' }, h('label', { class: 'label', for: 'd-analysis' }, 'Linked analysis (optional)'), f.analysis_id),
+  h('div', { class: 'field' }, h('label', { class: 'label', for: 'd-note' }, 'Note'), f.note),
+  h('div', { class: 'two' },
+    h('div', { class: 'field' }, h('label', { class: 'label', for: 'd-file' }, 'Proof screenshot'), file, editing?.evidence && h('p', { class: 'fine' }, 'A screenshot is attached. Choose a file to replace it.')),
+    h('div', { class: 'field' }, h('label', { class: 'label', for: 'd-evurl' }, 'Proof link'), f.evidence_url)),
+  msg, h('div', { class: 'row' }, submit, editing && h('button', { class: 'btn ghost', type: 'button', onclick: () => { current.positionId = null; renderDepot(); } }, 'Cancel')));
+
+  const quick = async (p, status) => {
+    const { evidence: _drop, ...rest } = p;
+    await api(`/api/admin/positions/${p.id}`, { method: 'PUT', body: { ...rest, status, closed_at: status === 'hit' || status === 'stopped' ? (p.closed_at || today()) : p.closed_at, opened_at: p.opened_at || (status === 'watching' ? null : today()) } });
+    renderDepot();
+  };
+  const rows = positions.map((p) => h('tr', {},
+    h('td', {}, h('b', { class: 'mono' }, p.asset), ' ', h('span', { class: `dir ${p.direction}` }, p.direction)),
+    h('td', {}, h('span', { class: `st ${p.status}` }, STATUS[p.status])),
+    h('td', { class: 'muted' }, p.evidence || p.evidence_url ? 'proof ✓' : 'no proof'),
+    h('td', {}, h('div', { class: 'actions' },
+      p.status !== 'open' && h('button', { class: 'btn sm ghost', onclick: () => quick(p, 'open') }, 'Open'),
+      h('button', { class: 'btn sm ghost', onclick: () => quick(p, 'hit') }, 'Hit'),
+      h('button', { class: 'btn sm ghost', onclick: () => quick(p, 'stopped') }, 'Stopped'),
+      h('button', { class: 'btn sm ghost', onclick: () => { current.positionId = p.id; renderDepot(); scrollTo(0, 0); } }, 'Edit'),
+      h('button', { class: 'btn sm danger', onclick: async () => { if (!confirm(`Delete ${p.asset}?`)) return; await api(`/api/admin/positions/${p.id}`, { method: 'DELETE' }); renderDepot('Deleted.'); } }, 'Delete')))));
+
+  shell(h('div', { class: 'studio' },
+    flash && notice('ok', flash),
+    h('div', { class: 'tiles' },
+      h('div', { class: 'tile' }, h('span', { class: 'label' }, 'Hit rate'), h('b', {}, stats.closed ? `${stats.hit_rate}%` : '–'), h('span', { class: 'muted' }, stats.closed ? `${stats.hits} of ${stats.closed} closed calls` : 'no closed calls yet')),
+      h('div', { class: 'tile' }, h('span', { class: 'label' }, 'Open / watching'), h('b', {}, `${stats.open} / ${stats.watching}`), h('span', { class: 'muted' }, 'positions'))),
+    h('p', { class: 'muted' }, 'The public hit rate is calculated from these records only. Mark a position Hit or Stopped when it closes and attach proof.'),
+    form,
+    positions.length ? h('div', { class: 'scroll-x' }, h('table', { class: 'table' }, h('thead', {}, h('tr', {}, ['Position', 'Status', 'Proof', ''].map((t) => h('th', {}, t)))), h('tbody', {}, rows))) : h('div', { class: 'empty' }, 'No positions yet.')));
+}
+
+/* ---------- AI agent ---------- */
+async function renderAgent() {
+  shell(h('p', { class: 'muted' }, 'Loading…'));
+  const st = await api('/api/admin/agent-status');
+  const out = h('div');
+  const test = h('button', { class: 'btn', onclick: async () => {
+    test.disabled = true; test.textContent = 'Testing…';
+    try { const r = await api('/api/admin/agent-test', { method: 'POST', body: {} }); out.replaceChildren(notice('ok', r.message)); }
+    catch (err) { out.replaceChildren(notice('err', err.message)); }
+    test.disabled = false; test.textContent = 'Test connection';
+  } }, 'Test connection');
+  const yes = (v) => h('span', { class: `badge ${v ? 'pub' : ''}` }, v ? 'yes' : 'no');
+  shell(h('div', { class: 'studio' },
+    h('section', { class: 'block' }, h('h2', {}, 'Agent status'),
+      h('div', { class: 'kv-row' }, h('span', {}, 'Provider ', h('span', { class: 'badge pub' }, st.provider)), st.model && h('span', {}, 'Model ', h('span', { class: 'badge' }, st.model)),
+        h('span', {}, 'API key set ', yes(st.key_configured)), h('span', {}, 'Refusal fallback ', yes(st.fallback))),
+      st.provider === 'mock' && h('p', { class: 'muted' }, window.__DEMO__ ? 'This online preview always runs the mock agent (templates, no AI). Connect the real agent on your own server as shown below.' : 'The mock agent builds content from templates and does not read your charts. Follow the steps below to switch to the real agent.'),
+      h('div', { class: 'row' }, test), out),
+    h('section', { class: 'block' }, h('h2', {}, 'Connect the real agent'),
+      h('ol', { class: 'steps-list' },
+        h('li', {}, h('div', {}, h('b', {}, 'Create an API key'), h('p', { class: 'muted' }, 'Sign in at console.anthropic.com, open API keys, create a key and set a monthly spending limit. Keep the key secret and never paste it into the website or into a chat.'))),
+        h('li', {}, h('div', {}, h('b', {}, 'Give it to your server'), h('p', { class: 'muted' }, 'On your computer:'), h('code', { class: 'code' }, 'ANTHROPIC_API_KEY=your-key AGENT_PROVIDER=claude ADMIN_PASSWORD=your-password npm start'),
+          h('p', { class: 'muted' }, 'On a host such as Render or Railway, add these as secret environment variables and restart.'))),
+        h('li', {}, h('div', {}, h('b', {}, 'Test the connection'), h('p', { class: 'muted' }, 'Press “Test connection” above. A green message means the agent is ready.'))),
+        h('li', {}, h('div', {}, h('b', {}, 'Create your first ad'), h('p', { class: 'muted' }, 'Open the Content studio, choose “★ Website promo” and generate. The agent writes a TikTok script and an Instagram carousel that promote the free 30 days and the live depot. Edit, approve and export the ZIP.'),
+          h('button', { class: 'btn ghost', onclick: () => { current = { tab: 'studio', editId: null, studioId: 'promo' }; render(); } }, 'Open website promo'))),
+        h('li', {}, h('div', {}, h('b', {}, 'Record and post'), h('p', { class: 'muted' }, 'Follow the scene list: screen-record the website, add your voice-over and the on-screen text, then upload the video to TikTok and Instagram with the exported caption and hashtags. Put the website address in your bio. Posting directly from here is not built: it needs approval from each platform.'))))),
+    h('section', { class: 'block' }, h('h2', {}, 'Good to know'),
+      h('ul', { class: 'plain' }, h('li', {}, 'Only the numbers from your depot and settings go into ads. If you mention a hit rate, the ad states how many closed calls it is based on and that the depot is simulated.'),
+        h('li', {}, 'Every caption and the last slide carry the disclaimer automatically.'),
+        h('li', {}, 'Each generation is one API call. Costs depend on your Anthropic plan and the model.')))));
+}
+
+/* ---------- Settings ---------- */
+async function renderSettings(flash) {
+  shell(h('p', { class: 'muted' }, 'Loading…'));
+  const c = await api('/api/config');
+  const until = h('input', { type: 'date', id: 's-until', value: c.free_until });
+  const price = h('input', { type: 'text', id: 's-price', inputmode: 'decimal', value: c.price });
+  const msg = h('div', {}, flash && notice('ok', flash));
+  shell(h('form', { class: 'panel form', onsubmit: async (e) => {
+    e.preventDefault();
+    try { await api('/api/admin/config', { method: 'PUT', body: { free_until: until.value, price: toNum(price.value) } }); renderSettings('Saved. The website now shows the new dates and price.'); }
+    catch (err) { msg.replaceChildren(notice('err', err.message)); }
+  } }, h('h2', {}, 'Free access and price'),
+  h('p', { class: 'muted' }, `Free access currently ends on ${c.free_until} (${c.days_left} days left). The countdown on the website follows this date.`),
+  h('div', { class: 'two' }, h('div', { class: 'field' }, h('label', { class: 'label', for: 's-until' }, 'Free access ends on'), until),
+    h('div', { class: 'field' }, h('label', { class: 'label', for: 's-price' }, 'Price per month after the free period (€)'), price)),
+  h('p', { class: 'fine' }, 'This controls the texts and the countdown. It does not block content or take payments yet.'),
+  msg, h('div', { class: 'row' }, h('button', { class: 'btn', type: 'submit' }, 'Save'))));
+}
+
 /* ---------- Inbox ---------- */
 async function renderInbox() {
   shell(h('p', { class: 'muted' }, 'Loading…'));
@@ -155,29 +298,33 @@ async function renderInbox() {
 }
 
 /* ---------- Content studio ---------- */
+const PROMO = { id: 'promo', asset: 'Apex Wave Capital', market: 'Free access', timeframe: 'Research', analysis_date: 'Live depot' };
+
 async function renderStudio() {
   shell(h('p', { class: 'muted' }, 'Loading…'));
   const items = await api('/api/admin/analyses');
-  if (!items.length) return shell(h('div', { class: 'empty' }, 'Create an analysis first.'));
-  const sel = h('select', { id: 'pick', 'aria-label': 'Analysis' }, items.map((a) =>
-    h('option', { value: a.id, selected: a.id === current.studioId }, `${a.asset} · ${a.timeframe} · ${a.analysis_date}`)));
+  const sel = h('select', { id: 'pick', 'aria-label': 'Content source' },
+    h('option', { value: 'promo', selected: current.studioId === 'promo' }, '★ Website promo (ad for the whole site)'),
+    items.map((a) => h('option', { value: a.id, selected: a.id === current.studioId }, `${a.asset} · ${a.timeframe} · ${a.analysis_date}`)));
   const stage = h('div', { class: 'studio' });
   const load = async () => {
-    current.studioId = Number(sel.value);
-    const analysis = items.find((a) => a.id === current.studioId);
-    const pack = await api(`/api/admin/analyses/${analysis.id}/pack`);
-    stage.replaceChildren(await studioView(analysis, pack, load));
+    const isPromo = sel.value === 'promo';
+    current.studioId = isPromo ? 'promo' : Number(sel.value);
+    const analysis = isPromo ? PROMO : items.find((a) => a.id === current.studioId);
+    const packUrl = isPromo ? '/api/admin/promo' : `/api/admin/analyses/${analysis.id}/pack`;
+    const pack = await api(packUrl);
+    stage.replaceChildren(await studioView(analysis, pack, load, packUrl));
   };
   sel.addEventListener('change', load);
-  shell(h('div', {}, h('div', { class: 'field' }, h('label', { class: 'label', for: 'pick' }, 'Analysis'), sel), h('br'), stage));
+  shell(h('div', {}, h('div', { class: 'field' }, h('label', { class: 'label', for: 'pick' }, 'Create content for'), sel), h('br'), stage));
   load();
 }
 
-async function studioView(analysis, pack, reload) {
+async function studioView(analysis, pack, reload, packUrl) {
   const msg = h('div');
   const generate = h('button', { class: 'btn', onclick: async () => {
     generate.disabled = true; generate.textContent = 'Generating…';
-    try { await api(`/api/admin/analyses/${analysis.id}/pack`, { method: 'POST', body: {} }); await reload(); }
+    try { await api(packUrl, { method: 'POST', body: {} }); await reload(); }
     catch (e) { msg.replaceChildren(notice('err', e.message)); generate.disabled = false; generate.textContent = 'Generate content'; }
   } }, pack ? 'Regenerate (overwrites draft)' : 'Generate content');
 
@@ -210,15 +357,15 @@ async function studioView(analysis, pack, reload) {
 
   const save = async (status) => {
     try {
-      const saved = await api(`/api/admin/analyses/${analysis.id}/pack`, { method: 'PUT', body: { content: collect(), status } });
+      const saved = await api(packUrl, { method: 'PUT', body: { content: collect(), status } });
       msg.replaceChildren(notice('ok', status === 'approved' ? 'Approved. You can export now.' : 'Draft saved.'));
       return saved;
     } catch (e) { msg.replaceChildren(notice('err', e.message)); }
   };
 
-  let chartImg = null;
+  let chartImg = null; // stays null for the website promo (no screenshot)
   const renderAll = async (saved) => {
-    chartImg ||= await loadImage(imgUrl(analysis.image));
+    if (chartImg === null && analysis.image) chartImg = await loadImage(imgUrl(analysis.image));
     const sl = saved.content.instagram.slides;
     const canvases = [renderTikTokCover(saved.content.tiktok.hook, analysis, chartImg),
       ...sl.map((s, i) => renderCarouselSlide(s, i, sl.length, analysis, chartImg))];

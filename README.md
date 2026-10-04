@@ -67,7 +67,28 @@ password in the preview: `demo`. The ZIP download is turned off there; everythin
 
 ## Pages
 
-`/` home (animated hero, Elliott Wave lab, Bitcoin supply vs elastic money chart) · `/approach` · `/analyses` (Research) · `/analysis?id=…` · `/pricing` (Membership) · `/about` · `/support` (Contact) · `/admin`.
-Pricing is example content; no payment is connected. The support form stores messages in the admin Inbox
-(5 messages per hour per IP). Before going public, add the legal pages your jurisdiction requires (for Germany:
+`/` home · `/analyses` (Research) · `/analysis?id=…` · `/depot` (live demo depot) · `/pricing` · `/support` (Contact) · `/admin`.
+
+### Live demo depot and hit rate
+
+Positions are added in the admin **Depot** tab: buy zone, stop, target, status (watching, open, target hit, stopped out),
+entry and exit price, and proof (screenshot and/or link). The public hit rate is **calculated from these records**:
+closed calls that reached the target before the stop, divided by all closed calls, always shown with the sample size
+("8 of 10 closed calls"). With no closed calls the site shows "–". The depot is labelled as a simulation without real money.
+
+### Free access period
+
+The first start sets a free period of 30 days (`free_until`). Change the date and the later monthly price in the admin
+**Settings** tab. The countdown bar, the home page and the pricing page follow it. Email sign-ups land in the **Inbox**.
+This only controls texts and the countdown: it does not block content or take payments yet (that needs accounts and a
+payment provider).
+
+### AI agent and first videos
+
+Admin **AI agent** tab: status, connection test and a step-by-step guide. In the **Content studio** choose
+"★ Website promo" to generate a TikTok script and Instagram carousel that promote the free period and the depot, using
+only numbers from your own records. Export the ZIP, record the video following the scene list and post it manually.
+Direct posting to TikTok and Instagram is not built (it requires platform approval).
+
+Pricing is example content. Before going public, add the legal pages your jurisdiction requires (for Germany:
 Impressum and Datenschutzerklärung).
