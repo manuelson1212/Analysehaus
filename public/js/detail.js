@@ -7,10 +7,10 @@ const field = (label, value, cls) => value
   ? h('div', { class: cls }, h('div', { class: 'label' }, label), h('p', {}, value)) : null;
 
 api(`/api/analyses/${id}`).then((a) => {
-  document.title = `${a.asset} ${a.timeframe} · Analysehaus`;
+  document.title = `${a.asset} ${a.timeframe} · Apex Wave Capital`;
   root.replaceChildren(
     h('div', { class: 'page-head' },
-      h('a', { class: 'link-arrow back', href: routeUrl('analyses') }, '← All analyses'),
+      h('a', { class: 'link-arrow back', href: routeUrl('analyses') }, '← All research'),
       h('div', { class: 'row' },
         h('span', { class: 'label' }, `${a.market} · ${a.analysis_date}`),
         a.status !== 'published' && h('span', { class: 'badge' }, 'draft')),

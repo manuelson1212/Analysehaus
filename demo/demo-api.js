@@ -5,7 +5,7 @@ import { finalize } from '../lib/agent/index.js';
 
 window.__DEMO__ = true;
 window.__DEMO_ROUTER__ = true;
-const KEY = 'analysehaus-demo-v1';
+const KEY = 'apex-wave-demo-v1';
 const DEMO_PASSWORD = 'demo';
 let memory = null;
 

@@ -1,8 +1,12 @@
 import { h, api } from './dom.js';
 import { mountWave } from './wave.js';
+import { mountAtmosphere } from './atmosphere.js';
+import { mountSupply } from './supply.js';
 import { card } from './cards.js';
 
+mountAtmosphere(document.getElementById('atmo'));
 const wave = mountWave(document.getElementById('wave'));
+mountSupply(document.getElementById('supply'));
 
 // Rules list drives the diagram: hovering a rule highlights its wave.
 document.querySelectorAll('[data-wave]').forEach((el) => {
@@ -12,13 +16,12 @@ document.querySelectorAll('[data-wave]').forEach((el) => {
   el.addEventListener('focus', on); el.addEventListener('blur', off);
 });
 
-// Pointer glow on the hero card.
-const stage = document.getElementById('wave-card');
-stage.addEventListener('pointermove', (e) => {
+// Pointer glow on the chart cards.
+document.querySelectorAll('.wave-card').forEach((stage) => stage.addEventListener('pointermove', (e) => {
   const r = stage.getBoundingClientRect();
   stage.style.setProperty('--mx', `${e.clientX - r.left}px`);
   stage.style.setProperty('--my', `${e.clientY - r.top}px`);
-});
+}));
 
 const latest = document.getElementById('latest');
 api('/api/analyses').then((all) => {

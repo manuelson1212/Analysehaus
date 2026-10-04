@@ -31,7 +31,7 @@ export function loadImage(src) {
   });
 }
 
-const C = { bg: '#0a0b0d', panel: '#111317', line: '#242831', text: '#e6e8ec', muted: '#7f8794', accent: '#ffb000' };
+const C = { bg: '#0a0b0d', panel: '#111317', line: '#242831', text: '#e6e8ec', muted: '#7f8794', accent: '#f7931a' };
 const MONO = 'ui-monospace, Menlo, Consolas, monospace';
 const SANS = 'system-ui, -apple-system, "Segoe UI", sans-serif';
 
@@ -68,9 +68,9 @@ function frame(ctx, W, H, meta, idx, total) {
   ctx.fillStyle = C.accent; ctx.fillRect(0, 0, W, 8);
   ctx.textBaseline = 'alphabetic';
   ctx.font = `700 34px ${MONO}`; ctx.fillStyle = C.text;
-  ctx.fillText('ANALYSE', 60, 92);
-  const w = ctx.measureText('ANALYSE').width;
-  ctx.fillStyle = C.accent; ctx.fillText('HAUS', 60 + w, 92);
+  ctx.fillText('APEX WAVE ', 60, 92);
+  const w = ctx.measureText('APEX WAVE ').width;
+  ctx.fillStyle = C.accent; ctx.fillText('CAPITAL', 60 + w, 92);
   ctx.font = `26px ${MONO}`; ctx.fillStyle = C.muted; ctx.textAlign = 'right';
   ctx.fillText(meta, W - 60, 92);
   if (total) ctx.fillText(`${idx + 1}/${total}`, W - 60, H - 50);

@@ -1,7 +1,7 @@
 // Shared site chrome: header, footer and scroll reveal. Page markup stays static HTML.
 import { h, bindLinks, routeUrl } from './dom.js';
 
-const NAV = [['home', 'Home'], ['analyses', 'Analyses'], ['about', 'About'], ['pricing', 'Pricing'], ['support', 'Support']];
+const NAV = [['home', 'Home'], ['approach', 'Approach'], ['analyses', 'Research'], ['pricing', 'Membership'], ['about', 'About'], ['support', 'Contact']];
 
 function header() {
   const links = NAV.map(([key, label]) => h('a', { class: 'nav-link', 'data-route': key, href: routeUrl(key) }, label));
@@ -16,7 +16,7 @@ function header() {
   });
   nav.addEventListener('click', (e) => { if (e.target.closest('a')) document.documentElement.classList.remove('nav-open'); });
   return h('div', { class: 'wrap bar' },
-    h('a', { class: 'brand', 'data-route': 'home', href: routeUrl('home') }, h('span', { class: 'brand-mark', 'aria-hidden': 'true' }), h('span', {}, 'Analyse', h('b', {}, 'haus'))),
+    h('a', { class: 'brand', 'data-route': 'home', href: routeUrl('home') }, h('span', { class: 'brand-mark', 'aria-hidden': 'true' }), h('span', {}, 'Apex Wave ', h('b', {}, 'Capital'))),
     nav, toggle);
 }
 
@@ -26,10 +26,10 @@ function footer() {
   return h('div', { class: 'wrap' },
     h('div', { class: 'foot-grid' },
       h('div', { class: 'foot-brand' },
-        h('a', { class: 'brand', 'data-route': 'home', href: routeUrl('home') }, h('span', { class: 'brand-mark', 'aria-hidden': 'true' }), h('span', {}, 'Analyse', h('b', {}, 'haus'))),
-        h('p', { class: 'muted' }, 'Classical Elliott Wave analysis for crypto and equities. Every analysis names its invalidation level.')),
-      col('Explore', [['home', 'Home'], ['analyses', 'Analyses'], ['pricing', 'Pricing']]),
-      col('Company', [['about', 'About'], ['support', 'Support'], ['admin', 'Admin']])),
+        h('a', { class: 'brand', 'data-route': 'home', href: routeUrl('home') }, h('span', { class: 'brand-mark', 'aria-hidden': 'true' }), h('span', {}, 'Apex Wave ', h('b', {}, 'Capital'))),
+        h('p', { class: 'muted' }, 'Independent research on Bitcoin and global markets: Elliott Wave structure read through macro monetary theory.')),
+      col('Explore', [['home', 'Home'], ['approach', 'Approach'], ['analyses', 'Research'], ['pricing', 'Membership']]),
+      col('Company', [['about', 'About'], ['support', 'Contact'], ['admin', 'Admin']])),
     h('p', { class: 'fineprint' }, 'Educational market analysis only. Not financial advice, not an offer or a solicitation. Trading involves substantial risk of loss; past patterns do not guarantee future results.'));
 }
 

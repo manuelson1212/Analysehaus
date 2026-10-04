@@ -16,7 +16,7 @@ const bundle = async (contents) => (await build({
 
 // route name -> [html file, page script or null]
 const pages = {
-  home: ['public/index.html', 'home'], analyses: ['public/analyses.html', 'gallery'], detail: ['public/analysis.html', 'detail'],
+  home: ['public/index.html', 'home'], approach: ['public/approach.html', null], analyses: ['public/analyses.html', 'gallery'], detail: ['public/analysis.html', 'detail'],
   about: ['public/about.html', null], pricing: ['public/pricing.html', 'pricing'], support: ['public/support.html', 'support'], admin: ['public/admin.html', 'admin'],
 };
 const templates = {}, code = {};
@@ -44,7 +44,7 @@ addEventListener('hashchange', route);
 window.__layout.mountLayout('home');
 route();`;
 
-const html = `<title>Analysehaus</title>
+const html = `<title>Apex Wave Capital</title>
 <style>${css}</style>
 <header class="site-header" id="site-header"></header>
 <div class="demo-banner">Online preview · your data stays in this browser · <a data-route="admin" href="#admin">Open admin</a> (password <b>demo</b>)</div>

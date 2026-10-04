@@ -184,7 +184,7 @@ const server = createServer(async (req, res) => {
       return await serveFile(res, join(UPLOAD_DIR, name), 'public, max-age=31536000, immutable');
     }
 
-    const pages = { '/': '/index.html', '/analyses': '/analyses.html', '/analysis': '/analysis.html', '/about': '/about.html',
+    const pages = { '/': '/index.html', '/approach': '/approach.html', '/analyses': '/analyses.html', '/analysis': '/analysis.html', '/about': '/about.html',
       '/pricing': '/pricing.html', '/support': '/support.html', '/admin': '/admin.html' };
     const clean = pages[url.pathname] || url.pathname;
     const file = normalize(join(PUBLIC_DIR, clean));
@@ -198,6 +198,6 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Analysehaus running on http://localhost:${PORT}`);
+  console.log(`Apex Wave Capital running on http://localhost:${PORT}`);
   if (PASSWORD_GENERATED) console.log(`No ADMIN_PASSWORD set. Temporary admin password: ${ADMIN_PASSWORD}`);
 });

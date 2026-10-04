@@ -1,4 +1,4 @@
-# Analysehaus
+# Apex Wave Capital
 
 Elliott Wave analysis platform: a public gallery of analyses plus a private admin area with an
 automated marketing agent that turns each analysis into a TikTok script and an Instagram carousel.
@@ -67,7 +67,7 @@ password in the preview: `demo`. The ZIP download is turned off there; everythin
 
 ## Pages
 
-`/` home (interactive Elliott Wave diagram) · `/analyses` · `/analysis?id=…` · `/about` · `/pricing` · `/support` · `/admin`.
+`/` home (animated hero, Elliott Wave lab, Bitcoin supply vs elastic money chart) · `/approach` · `/analyses` (Research) · `/analysis?id=…` · `/pricing` (Membership) · `/about` · `/support` (Contact) · `/admin`.
 Pricing is example content; no payment is connected. The support form stores messages in the admin Inbox
 (5 messages per hour per IP). Before going public, add the legal pages your jurisdiction requires (for Germany:
 Impressum and Datenschutzerklärung).
