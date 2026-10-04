@@ -1,0 +1,282 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}canvas{display:block}</style></head>
+<body><canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// 15 s promo for Apex Wave Capital. render(t) draws the frame at time t (seconds); fully deterministic.
+const TL = window.TIMELINE; // { hook:{start,end}, intro, btc, eth, sol, ndx, spx, zone, target, inval, cta, total }
+const W = 1080, H = 1920, TAU = Math.PI * 2;
+const ctx = document.getElementById('c').getContext('2d');
+const C = { bg: '#05070a', navy: '#0c1422', text: '#eef1f5', muted: '#8a93a3', orange: '#f7931a', hi: '#ffc46b', lo: '#c96a00', blue: '#4f8cff', red: '#ff5c5c', green: '#3ddc84' };
+const SERIF = '"DejaVu Serif", Georgia, serif', MONO = '"DejaVu Sans Mono", monospace', SANS = '"DejaVu Sans", sans-serif';
+
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, u) => a + (b - a) * u;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const eOut = (u) => 1 - (1 - clamp(u)) ** 3;
+const eInOut = (u) => { u = clamp(u); return u < 0.5 ? 4 * u * u * u : 1 - (-2 * u + 2) ** 3 / 2; };
+const eBack = (u) => { u = clamp(u); const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * (u - 1) ** 3 + c1 * (u - 1) ** 2; };
+const hash = (n) => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
+const noise = (x) => { const i = Math.floor(x), f = x - i, u = f * f * (3 - 2 * f); return lerp(hash(i), hash(i + 1), u) * 2 - 1; };
+
+// Scene boundaries follow the voice-over.
+const T_B = TL.intro.start - 0.12, T_C = TL.btc.start - 0.22, T_D = TL.zone.start - 0.25, T_E = TL.cta.start - 0.2;
+
+/* ---------- shared drawing ---------- */
+function background(t, warm = 1) {
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+  const g = ctx.createRadialGradient(W * 0.75, H * 0.28, 0, W * 0.75, H * 0.28, H * 0.75);
+  g.addColorStop(0, `rgba(${warm < 0.5 ? '255,92,92' : '247,147,26'},${0.08 + 0.12 * Math.abs(warm)})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // drifting grid
+  ctx.strokeStyle = 'rgba(120,140,170,0.07)'; ctx.lineWidth = 1;
+  const off = (t * 22) % 90;
+  for (let y = -off; y < H; y += 90) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  for (let x = 0; x < W; x += 90) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  // ambient wave lines
+  for (let i = 0; i < 9; i++) {
+    const k = i / 8, base = H * (0.55 + 0.42 * k), amp = 14 + 40 * k;
+    ctx.beginPath();
+    for (let x = 0; x <= W + 16; x += 16) {
+      const u = x / W, th = u * TAU * 1.2 + t * (0.35 + 0.12 * k) + i * 0.8;
+      const y = base - u * 220 * (0.3 + k) + amp * (Math.sin(th) * 0.7 + Math.sin(th * 2.3 + t * 0.5) * 0.3);
+      x ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.strokeStyle = i % 4 === 2 ? `rgba(79,140,255,${0.05 + 0.12 * k})` : `rgba(247,147,26,${0.04 + 0.14 * k})`;
+    ctx.lineWidth = 1.2 + 2 * k; ctx.stroke();
+  }
+}
+
+function brand(t, alpha = 1) {
+  ctx.globalAlpha = alpha;
+  mark(64, 72, 0.075, 1);
+  ctx.font = `700 30px ${MONO}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = C.text; ctx.fillText('APEX WAVE ', 122, 112);
+  ctx.fillStyle = C.orange; ctx.fillText('CAPITAL', 122 + ctx.measureText('APEX WAVE ').width, 112);
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = C.orange; ctx.fillRect(0, 0, W * clamp(t / TL.total), 7);
+}
+
+// Brand mark: five-wave impulse ending in the apex node.
+const IMP = [[180, 690], [330, 500], [410, 590], [610, 300], [690, 390], [830, 190]];
+function mark(x, y, s, draw = 1, width = 64) {
+  const pts = IMP.map(([px, py]) => [x + (px - 180) * s, y + (py - 190) * s]);
+  polyline(pts, draw, C.orange, width * s, true);
+  if (draw >= 1) { const [ax, ay] = pts.at(-1); ctx.beginPath(); ctx.arc(ax, ay, width * 0.62 * s, 0, TAU); ctx.fillStyle = C.bg; ctx.fill(); ctx.lineWidth = width * 0.42 * s; ctx.strokeStyle = C.orange; ctx.stroke(); }
+}
+
+function polyline(pts, draw, color, width, glow = false) {
+  // draw: 0..1 portion of the total length
+  const segs = []; let total = 0;
+  for (let i = 1; i < pts.length; i++) { const l = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); segs.push(l); total += l; }
+  let left = total * clamp(draw);
+  const path = () => {
+    ctx.beginPath(); ctx.moveTo(...pts[0]);
+    let rem = left;
+    for (let i = 1; i < pts.length && rem > 0; i++) {
+      const f = Math.min(1, rem / segs[i - 1]);
+      ctx.lineTo(lerp(pts[i - 1][0], pts[i][0], f), lerp(pts[i - 1][1], pts[i][1], f)); rem -= segs[i - 1];
+    }
+  };
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (glow) { path(); ctx.strokeStyle = 'rgba(247,147,26,0.25)'; ctx.lineWidth = width * 3.2; ctx.filter = 'blur(14px)'; ctx.stroke(); ctx.filter = 'none'; }
+  path(); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke();
+}
+
+function text(str, x, y, font, color, align = 'left', alpha = 1) {
+  ctx.globalAlpha = alpha; ctx.font = font; ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = 'alphabetic'; ctx.fillText(str, x, y); ctx.globalAlpha = 1;
+}
+
+function pill(label, x, y, color, alpha = 1, scale = 1, fill = false) {
+  ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.scale(scale, scale);
+  ctx.font = `700 34px ${MONO}`; const w = ctx.measureText(label).width + 56, h = 70;
+  ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, 35);
+  ctx.fillStyle = fill ? color : 'rgba(5,7,10,0.85)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = color; ctx.stroke();
+  ctx.fillStyle = fill ? '#111' : color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, 0, 2);
+  ctx.restore();
+}
+
+/* ---------- chart geometry shared by the hook (chaos) and the intro (clean impulse) ---------- */
+const CH = { x0: 90, x1: 990, y: 1260, amp: 330 };
+const N = 64;
+// Clean impulse sampled at N points (normalised value 0..1 per wave point).
+const IMPULSE_V = [[0, 0.05], [0.18, 0.42], [0.3, 0.24], [0.62, 0.86], [0.74, 0.66], [1, 1]];
+function impulseAt(u) { for (let i = 1; i < IMPULSE_V.length; i++) if (u <= IMPULSE_V[i][0]) { const [a, va] = IMPULSE_V[i - 1], [b, vb] = IMPULSE_V[i]; return lerp(va, vb, (u - a) / (b - a)); } return 1; }
+const chaosAt = (u, t) => 0.5 + 0.38 * (noise(u * 9 + t * 3.2) * 0.65 + noise(u * 23 - t * 5.1) * 0.35);
+const toXY = (u, v) => [lerp(CH.x0, CH.x1, u), CH.y - (v - 0.5) * CH.amp * 2];
+
+/* ---------- scene A: frustration ---------- */
+function sceneA(t, out) {
+  const shake = (1 - out) * 7;
+  ctx.save(); ctx.translate(noise(t * 13) * shake, noise(t * 11 + 5) * shake);
+  // chaotic lines (ghosts + main)
+  for (let g = 2; g >= 0; g--) {
+    const pts = []; for (let i = 0; i < N; i++) { const u = i / (N - 1); pts.push(toXY(u, chaosAt(u + g * 0.013, t - g * 0.06))); }
+    polyline(pts, eOut(prog(t, 0, 0.9)), g ? `rgba(160,170,185,${0.18 / g})` : 'rgba(255,92,92,0.9)', g ? 4 : 7);
+  }
+  // headline, word by word
+  const words = [['Tired', 0.1], ['of', 0.32], ['vague', 0.45], ['market', 0.72], ['calls?', 1.02]];
+  const lines = [[0, 1], [2, 3], [4]];
+  ctx.font = `700 118px ${SERIF}`;
+  lines.forEach((ln, li) => {
+    let x = 70;
+    ln.forEach((wi) => {
+      const [w, at] = words[wi], u = prog(t, TL.hook.start + at, TL.hook.start + at + 0.28);
+      ctx.save(); const tw = ctx.measureText(w + ' ').width; ctx.translate(x + tw / 2, 430 + li * 140); ctx.scale(lerp(1.35, 1, eBack(u)), lerp(1.35, 1, eBack(u)));
+      text(w, -tw / 2, 0, `700 118px ${SERIF}`, li === 2 ? C.red : C.text, 'left', u * (1 - out)); ctx.restore(); x += tw;
+    });
+  });
+  // doubt chips
+  [['Maybe up?', 1.5, 300, 900, C.green, -0.06], ['Maybe down?', 2.0, 720, 1020, C.red, 0.05], ['It depends…', 2.35, 360, 1560, C.muted, -0.03]].forEach(([l, at, x, y, col, rot]) => {
+    const u = eBack(prog(t, TL.hook.start + at, TL.hook.start + at + 0.3));
+    if (u <= 0) return;
+    ctx.save(); ctx.translate(x + noise(t * 6 + at) * 6, y + noise(t * 5 + at) * 6); ctx.rotate(rot + noise(t * 4 + at) * 0.03);
+    pill(l, 0, 0, col, u * (1 - out), lerp(0.6, 1, u) * (1 - out * 0.4)); ctx.restore();
+  });
+  ctx.restore();
+}
+
+/* ---------- scene B: clarity (chaos morphs into a clean impulse) ---------- */
+function impulsePoints(t, morph) {
+  const pts = []; for (let i = 0; i < N; i++) { const u = i / (N - 1); pts.push(toXY(u, lerp(chaosAt(u, t), impulseAt(u), eInOut(morph)))); }
+  return pts;
+}
+function sceneB(t, morph, out) {
+  ctx.save(); ctx.translate(-out * W * 0.9, 0); ctx.globalAlpha = 1 - out * 0.6;
+  polyline(impulsePoints(t, morph), 1, C.orange, 12, true);
+  // wave labels
+  if (morph >= 1) IMPULSE_V.slice(1).forEach(([u, v], i) => {
+    const a = eBack(prog(t, T_B + 0.35 + i * 0.16, T_B + 0.6 + i * 0.16)); if (a <= 0) return;
+    const [x, y] = toXY(u, v), up = i % 2 === 0;
+    ctx.save(); ctx.translate(x, y); ctx.scale(a, a);
+    ctx.beginPath(); ctx.arc(0, 0, 15, 0, TAU); ctx.fillStyle = C.bg; ctx.fill(); ctx.lineWidth = 6; ctx.strokeStyle = C.orange; ctx.stroke();
+    text(`(${i + 1})`, 0, up ? -34 : 62, `700 40px ${MONO}`, C.text, 'center'); ctx.restore();
+  });
+  // headline
+  const a1 = eOut(prog(t, T_B + 0.1, T_B + 0.45)), a2 = eOut(prog(t, T_B + 0.5, T_B + 0.85)), a3 = eOut(prog(t, T_B + 0.95, T_B + 1.3));
+  text('Clear.', 70 - (1 - a1) * 120, 470, `700 150px ${SERIF}`, C.text, 'left', a1);
+  text('Precise.', 70 - (1 - a2) * 120, 630, `700 150px ${SERIF}`, C.orange, 'left', a2);
+  text('ELLIOTT WAVE ANALYSIS', 74, 730, `700 46px ${MONO}`, C.hi, 'left', a3);
+  // lock-up: the analyst behind Apex Wave Capital
+  const a4 = eOut(prog(t, TL.intro.start + 1.3, TL.intro.start + 1.7));
+  ctx.globalAlpha = a4; text('YOUR ANALYST', W / 2, 1640 + (1 - a4) * 40, `600 30px ${MONO}`, C.muted, 'center', a4);
+  ctx.save(); ctx.translate(0, (1 - a4) * 40); mark(250, 1690, 0.11, a4 >= 1 ? 1 : a4, 60);
+  text('APEX WAVE', 360, 1752, `700 64px ${MONO}`, C.text, 'left', a4); text('CAPITAL', 362, 1812, `700 40px ${MONO}`, C.orange, 'left', a4); ctx.restore();
+  ctx.restore(); ctx.globalAlpha = 1;
+}
+
+/* ---------- scene C: markets carousel, each card synced to the spoken name ---------- */
+const ASSETS = [['btc', 'BTC', 'Bitcoin', 'CRYPTO'], ['eth', 'ETH', 'Ethereum', 'CRYPTO'], ['sol', 'SOL', 'Solana', 'CRYPTO'], ['ndx', 'NDX', 'Nasdaq 100', 'INDEX'], ['spx', 'SPX', 'S&P 500', 'INDEX']];
+function card(i, x, alpha, t, since) {
+  const [, tick, name, kind] = ASSETS[i];
+  ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, 0);
+  const cx = 90, cy = 560, cw = 900, chh = 820;
+  const g = ctx.createLinearGradient(0, cy, 0, cy + chh); g.addColorStop(0, '#111a28'); g.addColorStop(1, '#090d14');
+  ctx.beginPath(); ctx.roundRect(cx, cy, cw, chh, 36); ctx.fillStyle = g; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(247,147,26,0.55)'; ctx.stroke();
+  pill(kind, cx + 150, cy + 90, kind === 'CRYPTO' ? C.orange : C.blue, alpha);
+  text(tick, cx + 60, cy + 330, `700 210px ${MONO}`, C.orange, 'left', alpha);
+  text(name, cx + 66, cy + 420, `600 64px ${SANS}`, C.text, 'left', alpha);
+  // mini impulse drawing in over the card's time
+  const d = eOut(prog(t, since + 0.05, since + 0.75)), seed = i * 0.17;
+  const pts = []; for (let k = 0; k <= 40; k++) { const u = k / 40; pts.push([cx + 60 + u * (cw - 120), cy + 720 - (impulseAt(u) * 0.85 + noise(u * 14 + seed * 50) * 0.05) * 220]); }
+  polyline(pts, d, C.orange, 8, true);
+  ctx.restore(); ctx.globalAlpha = 1;
+}
+function sceneC(t, inA, out) {
+  const starts = ASSETS.map(([k]) => TL[k].start);
+  let idx = 0; starts.forEach((s, i) => { if (t >= s - 0.12) idx = i; });
+  text('WAVE BY WAVE', W / 2, 420, `700 44px ${MONO}`, C.hi, 'center', eOut(inA) * (1 - out));
+  text('I analyse', W / 2, 500, `700 76px ${SERIF}`, C.text, 'center', eOut(inA) * (1 - out));
+  const s = starts[idx] - 0.12, u = eInOut(prog(t, s, s + 0.26));
+  const enterX = idx === 0 ? lerp(W, 0, eOut(inA)) : lerp(W, 0, u);
+  if (idx > 0 && u < 1) card(idx - 1, lerp(0, -W * 1.05, u), 1 - u * 0.5, t, starts[idx - 1]);
+  card(idx, enterX - out * W * 1.1, 1 - out, t, starts[idx]);
+  // ticker strip
+  ASSETS.forEach(([, tick], i) => {
+    const on = i <= idx, x = 150 + i * 195, y = 1520;
+    text(tick, x, y, `700 40px ${MONO}`, i === idx ? C.orange : on ? C.text : 'rgba(138,147,163,0.45)', 'center', (1 - out));
+    if (i === idx) { ctx.fillStyle = C.orange; ctx.globalAlpha = 1 - out; ctx.fillRect(x - 50, y + 18, 100, 6); ctx.globalAlpha = 1; }
+  });
+}
+
+/* ---------- scene D: zone, target, invalidation ---------- */
+function sceneD(t, inA, out) {
+  const ox = lerp(W * 0.6, 0, eOut(inA));
+  ctx.save(); ctx.translate(ox, 0); ctx.globalAlpha = eOut(inA);
+  const X = (u) => lerp(110, 970, u), Y = (v) => 1520 - v * 560;
+  const path = [[0, 0.1], [0.2, 0.42], [0.32, 0.26], [0.62, 0.78], [0.78, 0.55]];
+  const pts = []; for (let k = 0; k <= 60; k++) { const u = k / 60 * 0.78; let v = 0; for (let j = 1; j < path.length; j++) if (u <= path[j][0]) { v = lerp(path[j - 1][1], path[j][1], (u - path[j - 1][0]) / (path[j][0] - path[j - 1][0])); break; } pts.push([X(u), Y(v + noise(u * 30) * 0.015)]); }
+  polyline(pts, eOut(prog(t, T_D, T_D + 0.6)), C.orange, 10, true);
+  const zoneA = eOut(prog(t, TL.zone.start, TL.zone.start + 0.3)), tgtA = eOut(prog(t, TL.target.start, TL.target.start + 0.3)), invA = eOut(prog(t, TL.inval.start, TL.inval.start + 0.3));
+  // buy zone band
+  ctx.globalAlpha = zoneA; ctx.fillStyle = 'rgba(61,220,132,0.16)'; ctx.fillRect(X(0.72), Y(0.58), (X(1) - X(0.72)) * zoneA, Y(0.48) - Y(0.58));
+  ctx.strokeStyle = C.green; ctx.lineWidth = 3; ctx.setLineDash([12, 10]); ctx.strokeRect(X(0.72), Y(0.58), (X(1) - X(0.72)) * zoneA, Y(0.48) - Y(0.58)); ctx.setLineDash([]);
+  // projected path into target
+  if (tgtA > 0) { ctx.globalAlpha = tgtA; ctx.setLineDash([16, 12]); polyline([[X(0.78), Y(0.55)], [X(0.9), Y(0.53)], [X(1), Y(1.0)]], tgtA, 'rgba(255,196,107,0.9)', 6); ctx.setLineDash([]);
+    ctx.strokeStyle = C.orange; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(X(0.3), Y(1.0)); ctx.lineTo(X(0.3) + (X(1) - X(0.3)) * tgtA, Y(1.0)); ctx.stroke(); }
+  if (invA > 0) { ctx.globalAlpha = invA; ctx.strokeStyle = C.red; ctx.lineWidth = 4; ctx.setLineDash([14, 10]); ctx.beginPath(); ctx.moveTo(X(0.2), Y(0.42)); ctx.lineTo(X(0.2) + (X(1) - X(0.2)) * invA, Y(0.42)); ctx.stroke(); ctx.setLineDash([]); }
+  ctx.globalAlpha = 1;
+  pill('BUY ZONE', 830, Y(0.58) - 58, C.green, zoneA * (1 - out), lerp(0.6, 1, eBack(zoneA)));
+  pill('TARGET', 330, Y(1.0) - 58, C.orange, tgtA * (1 - out), lerp(0.6, 1, eBack(tgtA)));
+  pill('INVALIDATION', 360, Y(0.42) + 70, C.red, invA * (1 - out), lerp(0.6, 1, eBack(invA)));
+  ctx.restore();
+  // headline built word by word
+  text('Zone.', 70, 460, `700 128px ${SERIF}`, C.green, 'left', zoneA * (1 - out));
+  text('Target.', 70, 600, `700 128px ${SERIF}`, C.orange, 'left', tgtA * (1 - out));
+  text('Invalidation.', 70, 740, `700 128px ${SERIF}`, C.red, 'left', invA * (1 - out));
+  const ev = eOut(prog(t, TL.inval.start + 0.2, TL.inval.start + 0.5));
+  text('IN EVERY SINGLE CALL', W / 2, 1700, `700 50px ${MONO}`, C.text, 'center', ev * (1 - out));
+}
+
+/* ---------- scene E: call to action ---------- */
+function sceneE(t) {
+  const g = ctx.createRadialGradient(W / 2, 900, 0, W / 2, 900, 900);
+  g.addColorStop(0, 'rgba(247,147,26,0.32)'); g.addColorStop(1, 'rgba(247,147,26,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // rising sparks
+  for (let i = 0; i < 46; i++) { const sx = hash(i) * W, speed = 120 + hash(i + 9) * 260, sy = H - ((t - T_E) * speed + hash(i + 3) * H) % H; ctx.globalAlpha = 0.25 + 0.5 * hash(i + 4); ctx.fillStyle = i % 5 ? C.hi : C.blue; ctx.beginPath(); ctx.arc(sx, sy, 2 + hash(i + 7) * 3, 0, TAU); ctx.fill(); }
+  ctx.globalAlpha = 1;
+  const a = eBack(prog(t, T_E + 0.1, T_E + 0.5)), n = Math.round(30 * eOut(prog(t, T_E + 0.1, T_E + 0.8)));
+  text('GET', W / 2, 620, `700 64px ${MONO}`, C.text, 'center', clamp(a));
+  ctx.save(); ctx.translate(W / 2, 960); ctx.scale(lerp(0.7, 1, clamp(a)), lerp(0.7, 1, clamp(a)));
+  ctx.shadowColor = 'rgba(247,147,26,0.8)'; ctx.shadowBlur = 60;
+  text(String(n), 0, 0, `700 400px ${SERIF}`, C.orange, 'center'); ctx.shadowBlur = 0; ctx.restore();
+  const b = eOut(prog(t, T_E + 0.45, T_E + 0.8));
+  text('DAYS FREE', W / 2, 1100 + (1 - b) * 30, `700 96px ${MONO}`, C.text, 'center', b);
+  text('Full access to every analysis', W / 2, 1185 + (1 - b) * 30, `400 46px ${SANS}`, C.muted, 'center', b);
+  const c = eBack(prog(t, TL.cta.start + 1.55, TL.cta.start + 1.9)), pulse = 1 + 0.04 * Math.sin((t - T_E) * 9);
+  pill('LINK IN BIO  →', W / 2, 1380, C.orange, clamp(c), lerp(0.6, 1, clamp(c)) * pulse, true);
+  const d = eOut(prog(t, T_E + 0.6, T_E + 1.0));
+  ctx.globalAlpha = d; mark(300, 1560, 0.1, 1, 60); ctx.globalAlpha = 1;
+  text('APEX WAVE', 400, 1620, `700 58px ${MONO}`, C.text, 'left', d); text('CAPITAL', 402, 1672, `700 36px ${MONO}`, C.orange, 'left', d);
+  text('Educational analysis. Not financial advice.', W / 2, 1840, `400 30px ${SANS}`, C.muted, 'center', d);
+}
+
+/* ---------- compositor with transitions ---------- */
+window.render = (t) => {
+  const inE = eInOut(prog(t, T_E - 0.05, T_E + 0.4));
+  background(t, t < T_B ? 0.2 : 1);
+  if (t < T_B + 0.5) {
+    const morph = prog(t, T_B - 0.3, T_B + 0.35);
+    if (morph < 1) sceneA(t, eOut(morph));
+    if (morph > 0) sceneB(t, morph, 0);
+    const flash = Math.max(0, 1 - Math.abs(t - T_B) / 0.12) * 0.18; if (flash) { ctx.fillStyle = `rgba(255,255,255,${flash})`; ctx.fillRect(0, 0, W, H); }
+  } else if (t < T_C + 0.3) {
+    const out = eInOut(prog(t, T_C - 0.05, T_C + 0.3));
+    sceneB(t, 1, out);
+    if (out > 0) sceneC(t, out, 0);
+  } else if (t < T_D + 0.1) {
+    const out = eInOut(prog(t, T_D - 0.2, T_D + 0.1));
+    sceneC(t, 1, out);
+    if (out > 0) sceneD(t, out, 0);
+  } else {
+    if (inE < 1) sceneD(t, 1, 0);
+    if (inE > 0) {
+      // circular reveal of the CTA scene
+      ctx.save(); ctx.beginPath(); ctx.arc(W / 2, 960, inE * Math.hypot(W, H), 0, TAU); ctx.clip();
+      background(t, 1); sceneE(t); ctx.restore();
+      if (inE < 1) { ctx.beginPath(); ctx.arc(W / 2, 960, inE * Math.hypot(W, H), 0, TAU); ctx.strokeStyle = C.orange; ctx.lineWidth = 10; ctx.stroke(); }
+    }
+  }
+  brand(t, t < 0.3 ? prog(t, 0, 0.3) : 1);
+};
+window.ready = true;
+</script></body></html>
