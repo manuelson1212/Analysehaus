@@ -1,14 +1,14 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Contact · Apex Wave Capital</title>
-  <meta name="description" content="Answers to common questions and a contact form for Apex Wave Capital.">
+  <title>Kontakt · Apex Wave Capital</title>
+  <meta name="description" content="Antworten auf häufige Fragen und ein Kontaktformular.">
   <meta property="og:site_name" content="Apex Wave Capital">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Contact · Apex Wave Capital">
-  <meta property="og:description" content="Answers to common questions and a contact form for Apex Wave Capital.">
+  <meta property="og:title" content="Kontakt · Apex Wave Capital">
+  <meta property="og:description" content="Antworten auf häufige Fragen und ein Kontaktformular.">
   <meta property="og:image" content="%PUBLIC_URL%/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -21,32 +21,33 @@
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body data-page="support">
-  <a class="skip" href="#main">Skip to content</a>
+  <a class="skip" href="#main">Zum Inhalt springen</a>
   <header class="site-header" id="site-header"></header>
   <div class="free-bar" id="free-bar"></div>
   <main id="main">
     <section class="wrap page-head">
-      <p class="eyebrow">Contact</p>
-      <h1>How can we help?</h1>
-      <p class="lede">Questions or ideas? During the free period your feedback shapes what we build next.</p>
+      <p class="eyebrow">Kontakt</p>
+      <h1>Wie können wir helfen?</h1>
+      <p class="lede">Fragen oder Ideen? Während des kostenlosen Zeitraums bestimmt dein Feedback, was wir als Nächstes bauen.</p>
     </section>
     <section class="wrap two-col support">
       <div>
-        <h2>Frequently asked</h2>
-        <details class="faq"><summary>Is this financial advice?</summary><p>No. Apex Wave Capital publishes educational market analysis. It is not personal advice and not a recommendation to buy or sell anything.</p></details>
-        <details class="faq"><summary>What does “invalidation level” mean?</summary><p>It is the price at which the published wave count is no longer valid. If the market trades beyond it, the analysis is void and a new count is needed.</p></details>
-        <details class="faq"><summary>What is the live depot?</summary><p>A simulated depot without real money. Each position shows its buy zone, stop, target and proof. Wins and losses both stay on the record.</p></details>
-        <details class="faq"><summary>How is the hit rate calculated?</summary><p>Closed calls that reached their target before the stop, divided by all closed calls. The number of closed calls is always shown next to it.</p></details>
+        <h2>Häufige Fragen</h2>
+        <details class="faq"><summary>Ist das eine Anlageberatung?</summary><p>Nein. Apex Wave Capital veröffentlicht Marktanalysen zu Bildungszwecken. Sie sind keine persönliche Beratung und keine Empfehlung zum Kauf oder Verkauf.</p></details>
+        <details class="faq"><summary>Was bedeutet „Invalidierungslevel“?</summary><p>Das ist der Kurs, ab dem die veröffentlichte Wellenzählung nicht mehr gilt. Handelt der Markt darüber hinaus, ist die Analyse hinfällig und eine neue Zählung nötig.</p></details>
+        <details class="faq"><summary>Was ist das Live-Depot?</summary><p>Ein simuliertes Depot ohne echtes Geld. Jede Position zeigt Kaufzone, Stop, Ziel und Nachweis. Gewinne und Verluste bleiben sichtbar.</p></details>
+        <details class="faq"><summary>Wie wird die Trefferquote berechnet?</summary><p>Abgeschlossene Calls, die ihr Ziel vor dem Stop erreicht haben, geteilt durch alle abgeschlossenen Calls. Die Anzahl der Calls steht immer daneben.</p></details>
+        <details class="faq"><summary>Wie oft erscheinen Analysen?</summary><p>Wenn ein Setup es wert ist, dokumentiert zu werden. Einen festen Rhythmus gibt es nicht.</p></details>
       </div>
       <form class="panel form" id="contact-form" novalidate>
-        <h2>Send a message</h2>
+        <h2>Nachricht senden</h2>
         <div class="field"><label class="label" for="c-name">Name</label><input type="text" id="c-name" name="name" maxlength="80" autocomplete="name" required></div>
-        <div class="field"><label class="label" for="c-email">Email</label><input type="text" id="c-email" name="email" maxlength="120" autocomplete="email" inputmode="email" required></div>
-        <div class="field"><label class="label" for="c-topic">Topic</label>
-          <select id="c-topic" name="topic"><option>Feedback / improvement idea</option><option>General question</option><option>Depot question</option><option>Bug report</option></select></div>
-        <div class="field"><label class="label" for="c-message">Message</label><textarea id="c-message" name="message" maxlength="4000" rows="5" required></textarea></div>
+        <div class="field"><label class="label" for="c-email">E-Mail</label><input type="text" id="c-email" name="email" maxlength="120" autocomplete="email" inputmode="email" required></div>
+        <div class="field"><label class="label" for="c-topic">Thema</label>
+          <select id="c-topic" name="topic"><option>Feedback / Verbesserungsidee</option><option>Allgemeine Frage</option><option>Frage zum Depot</option><option>Fehler melden</option></select></div>
+        <div class="field"><label class="label" for="c-message">Nachricht</label><textarea id="c-message" name="message" maxlength="4000" rows="5" required></textarea></div>
         <div id="contact-msg"></div>
-        <button class="btn" type="submit" id="contact-send">Send message</button>
+        <button class="btn" type="submit" id="contact-send">Nachricht senden</button>
       </form>
     </section>
   </main>

@@ -11,7 +11,7 @@ form.addEventListener('submit', async (e) => {
   try {
     await api('/api/contact', { method: 'POST', body: data });
     form.reset();
-    out.replaceChildren(h('div', { class: 'msg ok', role: 'status' }, 'Thank you. Your message was sent and we will reply by email.'));
+    out.replaceChildren(h('div', { class: 'msg ok', role: 'status' }, 'Danke! Deine Nachricht ist angekommen. Wir antworten dir per E-Mail.'));
   } catch (err) {
     out.replaceChildren(h('div', { class: 'msg err', role: 'alert' }, err.message));
   }

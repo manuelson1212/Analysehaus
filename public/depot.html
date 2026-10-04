@@ -1,14 +1,14 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Live Depot · Apex Wave Capital</title>
-  <meta name="description" content="A simulated live depot that tracks every call with buy zone, stop, target and proof.">
+  <title>Live-Depot · Apex Wave Capital</title>
+  <meta name="description" content="Ein simuliertes Live-Depot, das jeden Call mit Kaufzone, Stop, Ziel und Nachweis dokumentiert.">
   <meta property="og:site_name" content="Apex Wave Capital">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Live Depot · Apex Wave Capital">
-  <meta property="og:description" content="A simulated live depot that tracks every call with buy zone, stop, target and proof.">
+  <meta property="og:title" content="Live-Depot · Apex Wave Capital">
+  <meta property="og:description" content="Ein simuliertes Live-Depot, das jeden Call mit Kaufzone, Stop, Ziel und Nachweis dokumentiert.">
   <meta property="og:image" content="%PUBLIC_URL%/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -21,32 +21,32 @@
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body data-page="depot">
-  <a class="skip" href="#main">Skip to content</a>
+  <a class="skip" href="#main">Zum Inhalt springen</a>
   <header class="site-header" id="site-header"></header>
   <div class="free-bar" id="free-bar"></div>
   <main id="main" class="wrap">
     <section class="page-head">
-      <p class="eyebrow">Live demo depot</p>
-      <h1>Every call, tracked in the open.</h1>
-      <p class="lede">A simulated depot. Buy zone, stop and target are set before the entry, and wins and losses stay on the record.</p>
-      <div class="notice small">Simulation without real money. Not a recommendation to buy or sell.</div>
+      <p class="eyebrow">Live-Demo-Depot</p>
+      <h1>Jeder Call, offen dokumentiert.</h1>
+      <p class="lede">Ein simuliertes Depot. Kaufzone, Stop und Ziel stehen vor dem Einstieg fest, Gewinne und Verluste bleiben sichtbar.</p>
+      <div class="notice small">Simulation ohne echtes Geld. Keine Empfehlung zum Kauf oder Verkauf.</div>
     </section>
     <section class="tiles">
-      <div class="tile"><span class="label">Hit rate</span><b id="t-rate">–</b><span id="t-rate-sub" class="muted">–</span></div>
-      <div class="tile"><span class="label">Average result</span><b id="t-avg">–</b><span class="muted">per closed call</span></div>
-      <div class="tile"><span class="label">Open</span><b id="t-open">–</b><span class="muted">positions running</span></div>
-      <div class="tile"><span class="label">Watching</span><b id="t-watch">–</b><span class="muted">waiting for the buy zone</span></div>
+      <div class="tile"><span class="label">Trefferquote</span><b id="t-rate">–</b><span id="t-rate-sub" class="muted">–</span></div>
+      <div class="tile"><span class="label">Ø Ergebnis</span><b id="t-avg">–</b><span class="muted">pro abgeschlossenem Call</span></div>
+      <div class="tile"><span class="label">Offen</span><b id="t-open">–</b><span class="muted">laufende Positionen</span></div>
+      <div class="tile"><span class="label">Beobachtet</span><b id="t-watch">–</b><span class="muted">warten auf die Kaufzone</span></div>
     </section>
-    <div class="notice small" id="lock-note" hidden>Zones, stops and targets of running positions are for members. Every closed call is public with its proof. <a data-route="account" href="/account">Unlock with a membership →</a></div>
+    <div class="notice small" id="lock-note" hidden>Kaufzonen, Stops und Ziele laufender Positionen sind für Mitglieder. Jeder abgeschlossene Call ist öffentlich, mit Nachweis. <a data-route="account" href="/account">Mit Mitgliedschaft freischalten →</a></div>
     <div class="filters" id="filters">
-      <button class="chip on" data-status="">All</button>
-      <button class="chip" data-status="watching">Watching</button>
-      <button class="chip" data-status="open">Open</button>
-      <button class="chip" data-status="hit">Target hit</button>
-      <button class="chip" data-status="stopped">Stopped out</button>
+      <button class="chip on" data-status="">Alle</button>
+      <button class="chip" data-status="watching">Beobachtet</button>
+      <button class="chip" data-status="open">Offen</button>
+      <button class="chip" data-status="hit">Ziel erreicht</button>
+      <button class="chip" data-status="stopped">Ausgestoppt</button>
     </div>
     <div class="panel" id="depot-table" aria-live="polite"></div>
-    <p class="fine depot-note">Hit rate = closed calls that reached their target before the stop. Result is measured from entry to exit price. Results may be rounded.</p>
+    <p class="fine depot-note">Trefferquote = abgeschlossene Calls, die ihr Ziel vor dem Stop erreicht haben. Das Ergebnis wird vom Einstiegs- zum Ausstiegskurs gemessen und kann gerundet sein.</p>
   </main>
   <footer class="site-footer" id="site-footer"></footer>
   <script type="module" src="/js/layout.js"></script>

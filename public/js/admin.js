@@ -323,6 +323,7 @@ async function renderSettings(flash) {
   const [c, legal] = await Promise.all([api('/api/config'), api('/api/admin/legal')]);
   const until = h('input', { type: 'date', id: 's-until', value: c.free_until });
   const price = h('input', { type: 'text', id: 's-price', inputmode: 'decimal', value: c.price });
+  const smallBiz = h('input', { type: 'checkbox', id: 's-small', checked: c.small_business !== false });
   const msg = h('div', {}, flash && notice('ok', flash));
   const ta = (k, label) => { const el = h('textarea', { id: `l-${k}`, rows: 8 }, legal[k] || ''); return [h('div', { class: 'field' }, h('label', { class: 'label', for: `l-${k}` }, label), el), el]; };
   const IMPRINT_TEMPLATE = `Angaben gemäß § 5 DDG
@@ -350,12 +351,13 @@ Die Inhalte dieser Website sind Marktanalysen zu Bildungszwecken. Sie sind keine
   shell(h('div', { class: 'studio' },
     h('form', { class: 'panel form', onsubmit: async (e) => {
       e.preventDefault();
-      try { await api('/api/admin/config', { method: 'PUT', body: { free_until: until.value, price: toNum(price.value) } }); renderSettings('Saved. The website now shows the new dates and price.'); }
+      try { await api('/api/admin/config', { method: 'PUT', body: { free_until: until.value, price: toNum(price.value), small_business: smallBiz.checked } }); renderSettings('Saved. The website now shows the new dates and price.'); }
       catch (err) { msg.replaceChildren(notice('err', err.message)); }
     } }, h('h2', {}, 'Free access and price'),
     h('p', { class: 'muted' }, `Free access currently ends on ${c.free_until} (${c.days_left} days left). Until then every visitor sees everything. Afterwards the member details need a membership.`),
     h('div', { class: 'two' }, h('div', { class: 'field' }, h('label', { class: 'label', for: 's-until' }, 'Free access ends on'), until),
       h('div', { class: 'field' }, h('label', { class: 'label', for: 's-price' }, 'Price shown on the site (€ per month)'), price)),
+    h('label', { class: 'check', for: 's-small' }, smallBiz, h('span', {}, 'Kleinunternehmer (§ 19 UStG): prices are shown without VAT, with the § 19 notice.')),
     h('p', { class: 'fine' }, 'The real price is the one you set for the product in Stripe. Keep both the same.'),
     msg, h('div', { class: 'row' }, h('button', { class: 'btn', type: 'submit' }, 'Save'))),
     h('form', { class: 'panel form', onsubmit: async (e) => {

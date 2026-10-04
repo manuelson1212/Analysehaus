@@ -41,7 +41,8 @@ test('position validation rejects bad zones, numbers and unsafe proof links', ()
 test('settings validation', () => {
   assert.throws(() => parseSettings({ free_until: '', price: 29 }), /required/);
   assert.throws(() => parseSettings({ free_until: '2026-12-31', price: -1 }), /0 or more/);
-  assert.deepEqual(parseSettings({ free_until: '2026-12-31', price: '39' }), { free_until: '2026-12-31', price: 39 });
+  assert.deepEqual(parseSettings({ free_until: '2026-12-31', price: '39' }), { free_until: '2026-12-31', price: 39, small_business: true });
+  assert.equal(parseSettings({ free_until: '2026-12-31', price: 39, small_business: false }).small_business, false);
 });
 
 test('cancellation form validation (German)', async () => {

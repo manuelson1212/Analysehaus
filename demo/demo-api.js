@@ -7,7 +7,7 @@ import { finalize } from '../lib/agent/index.js';
 
 window.__DEMO__ = true;
 window.__DEMO_ROUTER__ = true;
-const KEY = 'apex-wave-demo-v2';
+const KEY = 'apex-wave-demo-v3';
 const DEMO_PASSWORD = 'demo';
 let memory = null;
 
@@ -19,7 +19,7 @@ const store = {
   write(state) {
     memory = state;
     try { localStorage.setItem(KEY, JSON.stringify(state)); }
-    catch { throw Object.assign(new Error('Browser storage is full. Delete an analysis or use smaller screenshots.'), { status: 507 }); }
+    catch { throw Object.assign(new Error('Der Browser-Speicher ist voll. Lösche eine Analyse oder nutze kleinere Screenshots.'), { status: 507 }); }
   },
 };
 let adminFlag = false; // kept in memory so login works even when sessionStorage is blocked
@@ -78,30 +78,30 @@ function seedState() {
   const base = { scenario_alt: '', body: '', fib_levels: '', targets: '', invalidation: '', wave_count: '', scenario_primary: '' };
   const analyses = [
     { ...base, id: 1, asset: 'BTC/USD', market: 'Crypto', timeframe: '4H', analysis_date: day(1), status: 'published', tags: ['impulse', 'btc', 'wave3'],
-      wave_count: 'Wave (3) of 3 in progress, wave (2) ended at the 0.618 retracement',
-      scenario_primary: 'Wave (3) extends toward the 1.618 extension of wave (1), then a wave (4) pullback shallower than wave (2).',
-      scenario_alt: 'Wave (2) was a flat and wave (3) is only wave a of a larger structure. A close back inside wave (1) territory would favor this.',
-      invalidation: 'Close below 61,200, the start of wave (1).', targets: '68,400 - 70,100', fib_levels: '0.618 retracement at 64,250; 1.618 extension at 70,100',
-      body: 'Example analysis for the demo. Wave (1) was a clean five-wave advance. Wave (2) retraced to the 0.618 level on declining volume. The current advance shows alternation and strong momentum, typical of a third wave.',
+      wave_count: 'Welle (3) von 3 läuft, Welle (2) endete am 0,618-Retracement',
+      scenario_primary: 'Welle (3) dehnt sich bis zur 1,618-Extension von Welle (1) aus, danach folgt ein Rücksetzer in Welle (4), flacher als Welle (2).',
+      scenario_alt: 'Welle (2) war ein Flat und Welle (3) ist nur Welle a einer größeren Struktur. Ein Schlusskurs zurück im Bereich von Welle (1) würde dafür sprechen.',
+      invalidation: 'Schlusskurs unter 61.200, dem Start von Welle (1).', targets: '68.400 - 70.100', fib_levels: '0,618-Retracement bei 64.250; 1,618-Extension bei 70.100',
+      body: 'Beispielanalyse für die Vorschau. Welle (1) war ein sauberer Fünf-Wellen-Anstieg. Welle (2) korrigierte bei fallendem Volumen bis zum 0,618-Level. Der aktuelle Anstieg zeigt Alternation und starkes Momentum, typisch für eine dritte Welle.',
       image: drawChart([[0, 60], [0.18, 66], [0.32, 62.5], [0.78, 76], [1, 74]], [[0.18, 66, '(1)', 1], [0.32, 62.5, '(2)', 0], [0.78, 76, '(3)', 1]],
-        [{ v: 61.2, color: '#ef5350', dash: true, text: 'invalid' }, { v: 70.1, color: '#ffb000', dash: true, text: '1.618' }], 11, 'BTC/USD · 4H · DEMO CHART') },
+        [{ v: 61.2, color: '#ef5350', dash: true, text: 'ungültig' }, { v: 70.1, color: '#ffb000', dash: true, text: '1.618' }], 11, 'BTC/USD · 4H · DEMO CHART') },
     { ...base, id: 2, asset: 'S&P 500', market: 'Stocks', timeframe: '1D', analysis_date: day(3), status: 'published', tags: ['correction', 'index', 'abc'],
-      wave_count: 'Wave B of an expanded flat, wave C pending',
-      scenario_primary: 'Wave C unfolds in five waves toward the 1.0 to 1.618 projection of wave A.',
-      scenario_alt: 'The decline was already a complete zigzag and a new impulse has started.',
-      invalidation: 'Daily close above the wave B high.', targets: '5,310 - 5,180', fib_levels: 'C = 1.0 x A at 5,310; C = 1.618 x A at 5,180',
-      body: 'Example analysis for the demo. Wave B retraced more than 100 percent of wave A, which points to an expanded flat.',
+      wave_count: 'Welle B eines Expanded Flat, Welle C steht aus',
+      scenario_primary: 'Welle C läuft in fünf Wellen in Richtung der 1,0- bis 1,618-Projektion von Welle A.',
+      scenario_alt: 'Der Rückgang war bereits ein vollständiger Zickzack und ein neuer Impuls hat begonnen.',
+      invalidation: 'Tagesschluss über dem Hoch von Welle B.', targets: '5.310 - 5.180', fib_levels: 'C = 1,0 x A bei 5.310; C = 1,618 x A bei 5.180',
+      body: 'Beispielanalyse für die Vorschau. Welle B hat mehr als 100 Prozent von Welle A korrigiert, das spricht für ein Expanded Flat.',
       image: drawChart([[0, 80], [0.25, 62], [0.55, 84], [1, 66]], [[0.25, 62, 'A', 0], [0.55, 84, 'B', 1], [1, 66, 'C?', 0]],
-        [{ v: 84, color: '#ef5350', dash: true, text: 'invalid' }, { v: 56, color: '#ffb000', dash: true, text: '1.618' }], 23, 'S&P 500 · 1D · DEMO CHART') },
+        [{ v: 84, color: '#ef5350', dash: true, text: 'ungültig' }, { v: 56, color: '#ffb000', dash: true, text: '1.618' }], 23, 'S&P 500 · 1D · DEMO CHART') },
     { ...base, id: 3, asset: 'SOL/USD', market: 'Crypto', timeframe: '1H', analysis_date: day(0), status: 'draft', tags: ['draft'],
-      wave_count: 'Possible wave 4 triangle', scenario_primary: 'Breakout from the triangle into wave 5.', invalidation: 'Break below wave 2 low.',
+      wave_count: 'Mögliches Dreieck in Welle 4', scenario_primary: 'Ausbruch aus dem Dreieck in Welle 5.', invalidation: 'Bruch unter das Tief von Welle 2.',
       image: drawChart([[0, 50], [0.3, 70], [0.45, 58], [0.6, 66], [0.75, 60], [1, 63]], [[0.3, 70, '(3)', 1], [0.45, 58, 'a', 0], [0.6, 66, 'b', 1], [0.75, 60, 'c', 0]],
-        [{ v: 50, color: '#ef5350', dash: true, text: 'invalid' }], 37, 'SOL/USD · 1H · DEMO CHART') },
+        [{ v: 50, color: '#ef5350', dash: true, text: 'ungültig' }], 37, 'SOL/USD · 1H · DEMO CHART') },
   ];
   const P = (asset, market, direction, bl, bh, stop, target, entry, exit, status, opened, closed, proof) => ({
     asset, market, direction, buy_low: bl, buy_high: bh, stop, target, entry_price: entry, exit_price: exit, result_pct: null, status,
     opened_at: opened == null ? null : day(opened), closed_at: closed == null ? null : day(closed), analysis_id: null, evidence_url: null,
-    note: 'Sample position for the preview. Replace it with your own calls in the admin Depot tab.', evidence: proof ? proofImg(asset, status, proof) : null });
+    note: 'Beispielposition für die Vorschau. Ersetze sie im Admin-Bereich (Depot) durch deine eigenen Trades.', evidence: proof ? proofImg(asset, status, proof) : null });
   const positions = [
     P('BTC/USD', 'Crypto', 'long', 61000, 62400, 59800, 68400, 61800, null, 'open', 4, null),
     P('ETH/USD', 'Crypto', 'long', 2900, 3000, 2790, 3260, null, null, 'watching', null, null),
@@ -143,7 +143,7 @@ function parse(b) {
 const sortPos = (list) => [...list].sort((a, b) => (b.closed_at || b.opened_at || b.created_at || '').localeCompare(a.closed_at || a.opened_at || a.created_at || '') || b.id - a.id);
 function cfg(st) {
   const c = st.config || { free_until: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10), price: 29 };
-  return { ...c, days_left: Math.max(0, Math.ceil((Date.parse(`${c.free_until}T00:00:00Z`) - Date.now()) / 864e5)) };
+  return { small_business: true, ...c, days_left: Math.max(0, Math.ceil((Date.parse(`${c.free_until}T00:00:00Z`) - Date.now()) / 864e5)) };
 }
 const numOrNull = (v, name) => { if (v === '' || v == null) return null; const n = Number(v); if (!Number.isFinite(n)) throw new Err(400, `${name} must be a number`); return n; };
 function parsePos(b) {
@@ -179,10 +179,10 @@ async function route(method, path, body) {
   }
   if (method === 'POST' && path === '/api/contact') {
     const t = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
-    const m = { name: t(body.name, 80), email: t(body.email, 120), topic: t(body.topic, 60) || 'General question', message: t(body.message, 4000) };
-    if (!m.name) throw new Err(400, 'Name is required');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(m.email)) throw new Err(400, 'Please enter a valid email address');
-    if (!m.message) throw new Err(400, 'Message is required');
+    const m = { name: t(body.name, 80), email: t(body.email, 120), topic: t(body.topic, 60) || 'Allgemeine Frage', message: t(body.message, 4000) };
+    if (!m.name) throw new Err(400, 'Bitte gib deinen Namen an');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(m.email)) throw new Err(400, 'Bitte gib eine gültige E-Mail-Adresse an');
+    if (!m.message) throw new Err(400, 'Bitte schreib eine Nachricht');
     st.messages ||= []; st.nextMsg ||= 1;
     st.messages.unshift({ ...m, id: st.nextMsg++, created_at: now().slice(0, 16).replace('T', ' ') });
     store.write(st); return { ok: true };
@@ -193,7 +193,7 @@ async function route(method, path, body) {
   if (method === 'POST' && path === '/api/cancel') {
     const t = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
     const c = { name: t(body.name, 120), email: t(body.email, 120).toLowerCase(), kind: body.kind === 'extraordinary' ? 'extraordinary' : 'ordinary', reason: t(body.reason, 2000), effective_date: t(body.effective_date, 10) };
-    if (!c.name) throw new Err(400, 'Name ist erforderlich');
+    if (!c.name) throw new Err(400, 'Bitte gib deinen Namen an');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(c.email)) throw new Err(400, 'Bitte gib eine gültige E-Mail-Adresse an');
     if (c.kind === 'extraordinary' && !c.reason) throw new Err(400, 'Kündigungsgrund ist erforderlich');
     st.messages ||= []; st.nextMsg ||= 1;
@@ -206,34 +206,34 @@ async function route(method, path, body) {
   if (method === 'GET' && path === '/api/account/me') return meOf(st);
   if (method === 'POST' && path === '/api/account/register') {
     const email = String(body.email || '').trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) throw new Err(400, 'Please enter a valid email address');
-    if (String(body.password || '').length < 10) throw new Err(400, 'Password must have at least 10 characters');
-    if (body.accept_terms !== true) throw new Err(400, 'Please accept the Terms and the Privacy Policy');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) throw new Err(400, 'Bitte gib eine gültige E-Mail-Adresse an');
+    if (String(body.password || '').length < 10) throw new Err(400, 'Das Passwort braucht mindestens 10 Zeichen');
+    if (body.accept_terms !== true) throw new Err(400, 'Bitte akzeptiere die AGB und bestätige die Datenschutzerklärung');
     st.users ||= []; st.nextUser ||= 1;
-    if (st.users.some((u) => u.email === email)) throw new Err(409, 'An account with this email already exists. Please log in.');
+    if (st.users.some((u) => u.email === email)) throw new Err(409, 'Zu dieser E-Mail-Adresse gibt es bereits ein Konto. Bitte logge dich ein.');
     const u = { id: st.nextUser++, email, pw: await sha(body.password), comped: false, created_at: now() };
     st.users.push(u); store.write(st); setUser(u.id); return meOf(st);
   }
   if (method === 'POST' && path === '/api/account/login') {
     const u = (st.users || []).find((x) => x.email === String(body.email || '').trim().toLowerCase());
-    if (!u || u.pw !== await sha(body.password || '')) throw new Err(401, 'Wrong email or password');
+    if (!u || u.pw !== await sha(body.password || '')) throw new Err(401, 'E-Mail oder Passwort ist falsch.');
     setUser(u.id); return meOf(st);
   }
   if (method === 'POST' && path === '/api/account/logout') { setUser(null); return { ok: true }; }
   if (path.startsWith('/api/account/')) {
-    if (!curUser(st)) throw new Err(401, 'Please log in');
-    if (method === 'POST') throw new Err(503, 'Payments are not set up in the online preview.');
+    if (!curUser(st)) throw new Err(401, 'Bitte logge dich ein.');
+    if (method === 'POST') throw new Err(503, 'In der Online-Vorschau sind Zahlungen nicht aktiv.');
     if (method === 'DELETE') { st.users = st.users.filter((u) => u.id !== userId); store.write(st); setUser(null); return { ok: true }; }
   }
   if (method === 'POST' && path === '/api/signup') {
     const email = typeof body.email === 'string' ? body.email.trim().slice(0, 120) : '';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) throw new Err(400, 'Please enter a valid email address');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) throw new Err(400, 'Bitte gib eine gültige E-Mail-Adresse an');
     st.messages ||= []; st.nextMsg ||= 1;
     st.messages.unshift({ id: st.nextMsg++, name: '(free access signup)', email, topic: 'Free access signup', message: 'Requested free access.', created_at: now().slice(0, 16).replace('T', ' ') });
     store.write(st); return { ok: true };
   }
   if (method === 'POST' && path === '/api/admin/login') {
-    if (body.password !== DEMO_PASSWORD) throw new Err(401, 'Wrong password. In this demo the password is "demo".');
+    if (body.password !== DEMO_PASSWORD) throw new Err(401, 'Falsches Passwort. In dieser Vorschau lautet das Passwort "demo".');
     session.set(true); return { ok: true };
   }
   if (method === 'POST' && path === '/api/admin/logout') { session.set(false); return { ok: true }; }
@@ -252,7 +252,7 @@ async function route(method, path, body) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(body.free_until || '')) throw new Err(400, 'Free access end date is required');
     const price = Number(body.price);
     if (!Number.isFinite(price) || price < 0) throw new Err(400, 'Price must be 0 or more');
-    st.config = { free_until: body.free_until, price }; store.write(st); return cfg(st);
+    st.config = { free_until: body.free_until, price, small_business: body.small_business !== false }; store.write(st); return cfg(st);
   }
   if (method === 'GET' && path === '/api/admin/agent-status') return { provider: 'mock', model: null, key_configured: false, fallback: true, briefing_auto: false, briefing_news: 'none' };
   st.briefings ||= []; st.nextBr ||= 1;

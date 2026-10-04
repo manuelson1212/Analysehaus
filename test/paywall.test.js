@@ -70,7 +70,7 @@ test('accounts: validation, register, login, wrong password, duplicate', async (
   const bad = (body) => call(A, '/api/account/register', { method: 'POST', body });
   assert.equal((await bad({ email: 'x', password: 'longenough1', accept_terms: true })).status, 400);
   assert.equal((await bad({ email: 'a@b.co', password: 'short', accept_terms: true })).status, 400);
-  assert.match((await bad({ email: 'a@b.co', password: 'longenough1' })).data.error, /accept/i);
+  assert.match((await bad({ email: 'a@b.co', password: 'longenough1' })).data.error, /akzeptiere/i);
 
   const reg = await call(A, '/api/account/register', { method: 'POST', body: { email: 'Member@Example.com', password: 'correct-horse-1', accept_terms: true } });
   assert.equal(reg.status, 201); assert.equal(reg.data.user.email, 'member@example.com'); assert.equal(reg.data.access.active, false);

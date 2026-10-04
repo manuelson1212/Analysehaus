@@ -64,7 +64,7 @@ const contactHits = new Map();
 function rateLimit(ip, bucket = 'msg', max = 5) {
   const key = `${bucket}:${ip}`, now = Date.now();
   const hits = (contactHits.get(key) || []).filter((t) => now - t < 3600_000);
-  if (hits.length >= max) throw new HttpError(429, 'Too many attempts. Please try again later.');
+  if (hits.length >= max) throw new HttpError(429, 'Zu viele Versuche. Bitte versuche es später erneut.');
   contactHits.set(key, [...hits, now]);
 }
 
@@ -76,7 +76,7 @@ function getConfig() {
     kv.set('free_until', free_until);
   }
   const days_left = Math.max(0, Math.ceil((Date.parse(`${free_until}T00:00:00Z`) - Date.now()) / 864e5));
-  return { free_until, days_left, price: kv.get('price', 29) };
+  return { free_until, days_left, price: kv.get('price', 29), small_business: kv.get('small_business', true), payments_enabled: paymentsEnabled() };
 }
 
 const depotView = () => { const list = positions.list(); return { positions: list, stats: computeStats(list) }; };
@@ -212,42 +212,42 @@ async function api(req, res, url) {
   if (method === 'POST' && path === '/api/account/register') {
     const { email, password } = parseCredentials(await readJson(req), { register: true });
     rateLimit(ip, 'register');
-    if (users.byEmail(email)) throw new HttpError(409, 'An account with this email already exists. Please log in.');
+    if (users.byEmail(email)) throw new HttpError(409, 'Zu dieser E-Mail-Adresse gibt es bereits ein Konto. Bitte logge dich ein.');
     const user = users.create(email, await hashPassword(password));
     return json(res, 201, me(req, user), { 'Set-Cookie': userCookie(makeUserToken(user.id), isHttps(req)) });
   }
   if (method === 'POST' && path === '/api/account/login') {
-    if (!loginAllowed(`u:${ip}`)) throw new HttpError(429, 'Too many attempts. Try again later.');
+    if (!loginAllowed(`u:${ip}`)) throw new HttpError(429, 'Zu viele Versuche. Bitte versuche es später erneut.');
     const { email, password } = parseCredentials(await readJson(req));
     const user = users.byEmail(email);
     // Verify against a dummy hash for unknown emails so response time does not reveal which emails exist.
     const ok = await verifyPassword(password, user?.pw_hash ?? DUMMY_HASH) && !!user;
     recordLogin(`u:${ip}`, ok);
-    if (!ok) throw new HttpError(401, 'Wrong email or password');
+    if (!ok) throw new HttpError(401, 'E-Mail oder Passwort ist falsch.');
     return json(res, 200, me(req, user), { 'Set-Cookie': userCookie(makeUserToken(user.id), isHttps(req)) });
   }
   if (method === 'POST' && path === '/api/account/logout') return json(res, 200, { ok: true }, { 'Set-Cookie': clearUserCookie() });
   if (path.startsWith('/api/account/') && path !== '/api/account/') {
     const user = currentUser(req);
-    if (!user) throw new HttpError(401, 'Please log in');
+    if (!user) throw new HttpError(401, 'Bitte logge dich ein.');
     if (method === 'POST' && path === '/api/account/checkout') {
-      if (!paymentsEnabled()) throw new HttpError(503, 'Payments are not set up yet. Please check back soon.');
-      if (accessFor({ user, admin: false, config: { days_left: 0 } }).active) throw new HttpError(400, 'You already have an active membership.');
+      if (!paymentsEnabled()) throw new HttpError(503, 'Zahlungen sind noch nicht freigeschaltet. Bitte schau bald wieder vorbei.');
+      if (accessFor({ user, admin: false, config: { days_left: 0 } }).active) throw new HttpError(400, 'Du hast bereits eine aktive Mitgliedschaft.');
       const body = await readJson(req);
       if (body.waiver !== true) throw new HttpError(400, 'Bitte bestätige den Hinweis zum Widerrufsrecht, um fortzufahren.');
       users.update(user.id, { withdrawal_waiver_at: new Date().toISOString() });
-      try { return json(res, 200, { url: await createCheckout({ user, baseUrl: publicUrl(req), price: getConfig().price }) }); }
+      try { return json(res, 200, { url: await createCheckout({ user, baseUrl: publicUrl(req), price: getConfig().price, smallBusiness: getConfig().small_business }) }); }
       catch (e) { console.error('Stripe checkout failed:', e.message); throw new HttpError(502, 'Die Zahlungsseite konnte gerade nicht geöffnet werden. Bitte versuche es in ein paar Minuten erneut.'); }
     }
     if (method === 'POST' && path === '/api/account/portal') {
-      if (!paymentsEnabled() || !user.stripe_customer_id) throw new HttpError(400, 'There is no billing profile for this account yet.');
+      if (!paymentsEnabled() || !user.stripe_customer_id) throw new HttpError(400, 'Für dieses Konto gibt es noch kein Abo.');
       try { return json(res, 200, { url: await createPortal({ user, baseUrl: publicUrl(req) }) }); }
       catch (e) { console.error('Stripe portal failed:', e.message); throw new HttpError(502, 'Die Abo-Verwaltung konnte gerade nicht geöffnet werden. Bitte versuche es in ein paar Minuten erneut.'); }
     }
     if (method === 'DELETE' && path === '/api/account/me') {
       const body = await readJson(req);
-      if (!(await verifyPassword(String(body.password ?? ''), user.pw_hash))) throw new HttpError(401, 'Wrong password');
-      if (['active', 'trialing', 'past_due'].includes(user.sub_status)) throw new HttpError(409, 'Please cancel your subscription first (Manage billing), then delete the account.');
+      if (!(await verifyPassword(String(body.password ?? ''), user.pw_hash))) throw new HttpError(401, 'Falsches Passwort.');
+      if (['active', 'trialing', 'past_due'].includes(user.sub_status)) throw new HttpError(409, 'Bitte kündige zuerst dein Abo (Abo verwalten) und lösche dann das Konto.');
       users.remove(user.id);
       return json(res, 200, { ok: true }, { 'Set-Cookie': clearUserCookie() });
     }
@@ -262,7 +262,7 @@ async function api(req, res, url) {
 
   // Auth
   if (method === 'POST' && path === '/api/admin/login') {
-    if (!loginAllowed(ip)) throw new HttpError(429, 'Too many attempts. Try again later.');
+    if (!loginAllowed(ip)) throw new HttpError(429, 'Zu viele Versuche. Bitte versuche es später erneut.');
     const body = await readJson(req);
     const ok = checkPassword(body.password ?? '');
     recordLogin(ip, ok);
@@ -301,7 +301,7 @@ async function api(req, res, url) {
   // Settings, agent status and test
   if (method === 'PUT' && path === '/api/admin/config') {
     const d = parseSettings(await readJson(req));
-    kv.set('free_until', d.free_until); kv.set('price', d.price);
+    kv.set('free_until', d.free_until); kv.set('price', d.price); kv.set('small_business', d.small_business);
     return json(res, 200, getConfig());
   }
   if (method === 'GET' && path === '/api/admin/agent-status') {

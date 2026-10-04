@@ -11,25 +11,25 @@ function authForm(mode, onDone) {
   const email = h('input', { type: 'text', id: `${mode}-email`, inputmode: 'email', autocomplete: 'email', maxlength: 120, required: true });
   const pw = h('input', { type: 'password', id: `${mode}-pw`, autocomplete: isReg ? 'new-password' : 'current-password', required: true });
   const terms = h('input', { type: 'checkbox', id: 'accept-terms' });
-  const btn = h('button', { class: 'btn', type: 'submit' }, isReg ? 'Create account' : 'Log in');
+  const btn = h('button', { class: 'btn', type: 'submit' }, isReg ? 'Konto erstellen' : 'Einloggen');
   return h('form', { class: 'panel form', novalidate: true, onsubmit: async (e) => {
     e.preventDefault(); btn.disabled = true;
     try { await api(`/api/account/${mode}`, { method: 'POST', body: { email: email.value, password: pw.value, accept_terms: isReg ? terms.checked : undefined } }); changed(); onDone(); }
     catch (err) { out.replaceChildren(notice('err', err.message)); btn.disabled = false; }
   } },
-  h('h2', {}, isReg ? 'Create your account' : 'Log in'),
-  h('div', { class: 'field' }, h('label', { class: 'label', for: `${mode}-email` }, 'Email'), email),
-  h('div', { class: 'field' }, h('label', { class: 'label', for: `${mode}-pw` }, isReg ? 'Password (at least 10 characters)' : 'Password'), pw),
-  isReg && h('label', { class: 'check', for: 'accept-terms' }, terms, h('span', {}, 'I accept the ', h('a', { href: routeUrl('terms') }, 'Terms'), ' and have read the ', h('a', { href: routeUrl('privacy') }, 'Privacy Policy'), '.')),
+  h('h2', {}, isReg ? 'Konto erstellen' : 'Einloggen'),
+  h('div', { class: 'field' }, h('label', { class: 'label', for: `${mode}-email` }, 'E-Mail'), email),
+  h('div', { class: 'field' }, h('label', { class: 'label', for: `${mode}-pw` }, isReg ? 'Passwort (mindestens 10 Zeichen)' : 'Passwort'), pw),
+  isReg && h('label', { class: 'check', for: 'accept-terms' }, terms, h('span', {}, 'Ich akzeptiere die ', h('a', { href: routeUrl('terms') }, 'AGB'), ' und habe die ', h('a', { href: routeUrl('privacy') }, 'Datenschutzerklärung'), ' gelesen.')),
   out, btn);
 }
 
 function statusText(d) {
   const { access, user, config } = d;
-  if (access.reason === 'free_period') return { title: 'Free access', text: `Everything is open until ${config.free_until} (${config.days_left} days left). After that, the member details need a membership.` };
-  if (access.reason === 'comped') return { title: 'Free access granted', text: 'Your account has free access to all details.' };
-  if (access.reason === 'member') return { title: 'Active membership', text: user.sub_period_end ? `Current period ends on ${fmt(user.sub_period_end)}.` : 'Thank you for your support.' };
-  return { title: 'No active membership', text: `Chart, wave count and the track record are public. A membership (€${config.price} per month) unlocks all details.` };
+  if (access.reason === 'free_period') return { title: 'Kostenloser Zugang', text: `Bis ${new Date(config.free_until).toLocaleDateString('de-DE')} ist alles frei (noch ${config.days_left} Tage). Danach brauchen die Details eine Mitgliedschaft.` };
+  if (access.reason === 'comped') return { title: 'Kostenloser Zugang freigeschaltet', text: 'Dein Konto hat kostenlosen Zugang zu allen Details.' };
+  if (access.reason === 'member') return { title: 'Aktive Mitgliedschaft', text: user.sub_period_end ? `Der aktuelle Zeitraum endet am ${new Date(user.sub_period_end).toLocaleDateString('de-DE')}.` : 'Danke für deine Unterstützung.' };
+  return { title: 'Keine aktive Mitgliedschaft', text: `Chart, Wellenzählung und die Erfolgsbilanz sind öffentlich. Eine Mitgliedschaft (${config.price} € pro Monat) schaltet alle Details frei.` };
 }
 
 async function loggedIn(d) {
@@ -49,27 +49,27 @@ async function loggedIn(d) {
     if (!waiver.checked) return out.replaceChildren(notice('err', 'Bitte bestätige zuerst den Hinweis zum Widerrufsrecht.'));
     go('/api/account/checkout', subLabel, subscribe, { waiver: true });
   } }, subLabel);
-  const portal = h('button', { class: 'btn ghost', onclick: () => go('/api/account/portal', 'Manage billing', portal) }, 'Manage billing');
-  const del = h('details', { class: 'faq' }, h('summary', {}, 'Delete my account'),
-    h('p', {}, 'This removes your account and your login. If you have a subscription, cancel it in the billing portal first.'),
+  const portal = h('button', { class: 'btn ghost', onclick: () => go('/api/account/portal', 'Abo verwalten', portal) }, 'Abo verwalten');
+  const del = h('details', { class: 'faq' }, h('summary', {}, 'Konto löschen'),
+    h('p', {}, 'Damit werden dein Konto und dein Login entfernt. Hast du ein Abo, kündige es bitte vorher unter „Abo verwalten“.'),
     (() => {
-      const pw = h('input', { type: 'password', id: 'del-pw', placeholder: 'Your password', autocomplete: 'current-password' });
+      const pw = h('input', { type: 'password', id: 'del-pw', placeholder: 'Dein Passwort', autocomplete: 'current-password' });
       const b = h('button', { class: 'btn danger', type: 'button', onclick: async () => {
         try { await api('/api/account/me', { method: 'DELETE', body: { password: pw.value } }); changed(); render(); } catch (err) { out.replaceChildren(notice('err', err.message)); }
-      } }, 'Delete permanently');
+      } }, 'Endgültig löschen');
       return h('div', { class: 'row' }, pw, b);
     })());
   const success = new URLSearchParams(location.search).get('checkout') === 'success';
   root.replaceChildren(...[
-    h('div', { class: 'page-head' }, h('p', { class: 'eyebrow' }, 'Account'), h('h1', {}, user.email)),
-    success && notice('ok', 'Thank you! Your membership activates within a minute. This page updates automatically.'),
+    h('div', { class: 'page-head' }, h('p', { class: 'eyebrow' }, 'Konto'), h('h1', {}, user.email)),
+    success && notice('ok', 'Danke! Deine Mitgliedschaft wird in etwa einer Minute aktiv. Diese Seite aktualisiert sich automatisch.'),
     h('div', { class: 'panel acc-card' },
-      h('div', { class: 'row' }, h('h2', {}, st.title), h('span', { class: `badge ${access.active ? 'pub' : ''}` }, access.active ? 'access: on' : 'access: public only')),
+      h('div', { class: 'row' }, h('h2', {}, st.title), h('span', { class: `badge ${access.active ? 'pub' : ''}` }, access.active ? 'Zugang: voll' : 'Zugang: öffentlich')),
       h('p', { class: 'muted' }, st.text),
       h('div', { class: 'row' },
-        !['member', 'comped'].includes(access.reason) && (payments_enabled ? h('div', { class: 'sub-box' }, waiverBox, subscribe, h('p', { class: 'fine' }, 'Monatlich kündbar zum Ende des Abrechnungszeitraums, auch über „Verträge hier kündigen“ im Footer.')) : h('p', { class: 'muted' }, 'Memberships open soon. Payments are not connected yet.')),
+        !['member', 'comped'].includes(access.reason) && (payments_enabled ? h('div', { class: 'sub-box' }, waiverBox, subscribe, h('p', { class: 'fine' }, 'Monatlich kündbar zum Ende des Abrechnungszeitraums, auch über „Verträge hier kündigen“ im Footer.', d.config.small_business ? ' Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.' : '')) : h('p', { class: 'muted' }, 'Mitgliedschaften starten bald. Zahlungen sind noch nicht freigeschaltet.')),
         user.has_customer && portal,
-        h('button', { class: 'btn ghost', onclick: async () => { await api('/api/account/logout', { method: 'POST', body: {} }); changed(); render(); } }, 'Log out')),
+        h('button', { class: 'btn ghost', onclick: async () => { await api('/api/account/logout', { method: 'POST', body: {} }); changed(); render(); } }, 'Abmelden')),
       out),
     del].filter(Boolean)); // replaceChildren would print "false" for skipped items
   if (success && !['member', 'comped'].includes(access.reason)) setTimeout(render, 2500); // webhook may take a moment
@@ -80,7 +80,7 @@ async function render() {
   try { d = await api('/api/account/me'); } catch (e) { return root.replaceChildren(notice('err', e.message)); }
   if (d.user) return loggedIn(d);
   root.replaceChildren(
-    h('div', { class: 'page-head' }, h('p', { class: 'eyebrow' }, 'Account'), h('h1', {}, 'Your account')),
+    h('div', { class: 'page-head' }, h('p', { class: 'eyebrow' }, 'Konto'), h('h1', {}, 'Dein Konto')),
     h('div', { class: 'two-col' }, authForm('register', render), authForm('login', render)));
 }
 render();

@@ -48,7 +48,7 @@ const html = `<title>Apex Wave Capital</title>
 <style>${css}</style>
 <header class="site-header" id="site-header"></header>
 <div class="free-bar" id="free-bar"></div>
-<div class="demo-banner">Online preview with sample data · stays in this browser · <a data-route="admin" href="#admin">Open admin</a> (password <b>demo</b>)</div>
+<div class="demo-banner">Online-Vorschau mit Beispieldaten · bleibt in diesem Browser · <a data-route="admin" href="#admin">Admin öffnen</a> (Passwort <b>demo</b>)</div>
 <div id="view"></div>
 <footer class="site-footer" id="site-footer"></footer>
 <script>${api}</script>

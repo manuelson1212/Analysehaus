@@ -10,7 +10,7 @@ function render() {
   const q = search.value.trim().toLowerCase();
   const items = all.filter((a) => (!market || a.market === market)
     && (!q || a.asset.toLowerCase().includes(q) || a.tags.some((t) => t.includes(q))));
-  grid.replaceChildren(...(items.length ? items.map(card) : [h('div', { class: 'empty' }, all.length ? 'No analyses match your filter.' : 'No analyses published yet.')]));
+  grid.replaceChildren(...(items.length ? items.map(card) : [h('div', { class: 'empty' }, all.length ? 'Keine Analyse passt zu deinem Filter.' : 'Noch keine Analysen veröffentlicht.')]));
   window.__layout?.initReveal(grid);
 }
 
@@ -25,4 +25,4 @@ search.addEventListener('input', render);
 
 api('/api/analyses')
   .then((d) => { all = d; render(); })
-  .catch(() => grid.replaceChildren(h('div', { class: 'empty' }, 'Could not load analyses.')));
+  .catch(() => grid.replaceChildren(h('div', { class: 'empty' }, 'Analysen konnten nicht geladen werden.')));

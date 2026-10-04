@@ -1,14 +1,14 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Apex Wave Capital · Elliott Wave Analysis</title>
-  <meta name="description" content="Elliott Wave analyses with buy zones, targets and invalidation levels, plus a live demo depot with proof. First 30 days free.">
+  <title>Apex Wave Capital · Elliott-Wellen-Analysen</title>
+  <meta name="description" content="Elliott-Wellen-Analysen mit Kaufzone, Ziel und Invalidierung, dazu ein Live-Demo-Depot mit Nachweisen. Die ersten 30 Tage kostenlos.">
   <meta property="og:site_name" content="Apex Wave Capital">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Apex Wave Capital · Elliott Wave Analysis">
-  <meta property="og:description" content="Elliott Wave analyses with buy zones, targets and invalidation levels, plus a live demo depot with proof. First 30 days free.">
+  <meta property="og:title" content="Apex Wave Capital · Elliott-Wellen-Analysen">
+  <meta property="og:description" content="Elliott-Wellen-Analysen mit Kaufzone, Ziel und Invalidierung, dazu ein Live-Demo-Depot mit Nachweisen. Die ersten 30 Tage kostenlos.">
   <meta property="og:image" content="%PUBLIC_URL%/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body data-page="home">
-  <a class="skip" href="#main">Skip to content</a>
+  <a class="skip" href="#main">Zum Inhalt springen</a>
   <header class="site-header" id="site-header"></header>
   <div class="free-bar" id="free-bar"></div>
   <main id="main">
@@ -29,30 +29,30 @@
       <canvas class="atmo" id="atmo" aria-hidden="true"></canvas>
       <div class="hero-veil" aria-hidden="true"></div>
       <div class="wrap hero-inner">
-        <p class="pill"><span class="live-dot" aria-hidden="true"></span><span id="free-pill">First 30 days free</span></p>
-        <h1>Elliott Wave analysis<br><em>you can check.</em></h1>
-        <p class="lede">Every analysis shows the buy zone, the target and the level that proves it wrong. Every call is tracked in a live demo depot, wins and losses included.</p>
+        <p class="pill"><span class="live-dot" aria-hidden="true"></span><span id="free-pill">Die ersten 30 Tage kostenlos</span></p>
+        <h1>Elliott-Wellen-Analysen,<br><em>die du nachprüfen kannst.</em></h1>
+        <p class="lede">Jede Analyse zeigt Kaufzone, Ziel und das Level, das sie widerlegt. Jeder Call wird in einem Live-Demo-Depot dokumentiert, Gewinne und Verluste inklusive.</p>
         <div class="cta-row">
-          <a class="btn lg" data-route="pricing" href="/pricing">Start free access</a>
-          <a class="btn lg ghost" data-route="depot" href="/depot">See the live depot</a>
+          <a class="btn lg" data-route="account" href="/account">Kostenlos starten</a>
+          <a class="btn lg ghost" data-route="depot" href="/depot">Live-Depot ansehen</a>
         </div>
       </div>
     </section>
 
     <section class="strip">
       <div class="wrap strip-grid">
-        <div><b id="rate">–</b><span id="rate-sub">Loading…</span></div>
-        <div><b id="n-open">–</b><span>open positions in the depot</span></div>
-        <div><b id="count">–</b><span>published analyses</span></div>
-        <div><b id="days">30</b><span>days of free access</span></div>
+        <div><b id="rate">–</b><span id="rate-sub">Wird geladen…</span></div>
+        <div><b id="n-open">–</b><span>offene Positionen im Depot</span></div>
+        <div><b id="count">–</b><span>veröffentlichte Analysen</span></div>
+        <div><b id="days">30</b><span>Tage kostenloser Zugang</span></div>
       </div>
-      <p class="wrap strip-note">Hit rate = closed calls that reached their target before the stop. Simulated demo depot, no real money. The sample size is always shown.</p>
+      <p class="wrap strip-note">Trefferquote = abgeschlossene Calls, die ihr Ziel vor dem Stop erreicht haben. Simuliertes Demo-Depot ohne echtes Geld. Die Stichprobe wird immer angezeigt.</p>
     </section>
 
     <section class="section wrap">
       <div class="section-head row-between reveal">
-        <div><p class="eyebrow">Research</p><h2>Latest analyses</h2></div>
-        <a class="link-arrow" data-route="analyses" href="/analyses">All research →</a>
+        <div><p class="eyebrow">Analysen</p><h2>Neueste Analysen</h2></div>
+        <a class="link-arrow" data-route="analyses" href="/analyses">Alle Analysen →</a>
       </div>
       <div class="grid" id="latest" aria-live="polite"></div>
     </section>
@@ -60,9 +60,9 @@
     <section class="section dark-band">
       <div class="wrap">
         <div class="section-head row-between reveal">
-          <div><p class="eyebrow">Live demo depot</p><h2>Every call on the record.</h2>
-            <p class="muted">Buy zone, stop and target are set before the entry. Proof is attached to each position.</p></div>
-          <a class="link-arrow" data-route="depot" href="/depot">Open the depot →</a>
+          <div><p class="eyebrow">Live-Demo-Depot</p><h2>Jeder Call bleibt sichtbar.</h2>
+            <p class="muted">Kaufzone, Stop und Ziel stehen vor dem Einstieg fest. Zu jeder Position gibt es einen Nachweis.</p></div>
+          <a class="link-arrow" data-route="depot" href="/depot">Zum Depot →</a>
         </div>
         <div class="panel reveal" id="depot-preview"></div>
       </div>
@@ -71,11 +71,11 @@
     <section class="section wrap">
       <div class="free-card reveal">
         <div>
-          <p class="eyebrow">Founding access</p>
-          <h2>The first 30 days are free.</h2>
-          <p class="lede">Use everything and tell us what to improve. After the free period the details of each analysis need a membership at <b id="price-after">€29</b> per month. Chart, wave count and the whole track record stay public.</p>
+          <p class="eyebrow">Gründer-Zugang</p>
+          <h2>Die ersten 30 Tage sind kostenlos.</h2>
+          <p class="lede">Nutze alles und sag uns, was wir verbessern können. Danach kosten die Details jeder Analyse <b id="price-after">29 €</b> im Monat. Chart, Wellenzählung und die komplette Erfolgsbilanz bleiben öffentlich.</p>
         </div>
-        <div class="cta-col"><a class="btn lg" data-route="account" href="/account">Create your account</a><p class="fine">No payment details needed.</p></div>
+        <div class="cta-col"><a class="btn lg" data-route="account" href="/account">Konto erstellen</a><p class="fine">Keine Zahlungsdaten nötig.</p></div>
       </div>
     </section>
   </main>
