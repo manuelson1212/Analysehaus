@@ -3,6 +3,12 @@
 - `apex-wave-promo-15s.mp4`: final video with voice-over and music (H.264, 1080×1920, 30 fps, −14 LUFS).
 - `apex-wave-promo-15s-music-only.mp4`: same video with music only, for recording your own voice-over.
 
+## Rebuild
+
+`python build.py --piper <piper> --voice en-us-ryan-high.onnx --work <scratch dir>` regenerates the voice clips,
+the timeline, all frames, the soundtrack and both MP4 files. Edit `voiceover-lines.json` (spoken text) and
+`scene.html` (on-screen text) first. Tickers are written as `B-T-C.` so the voice reads the letters.
+
 ## How it is made
 
 1. **Voice-over**: Piper text-to-speech (free, runs locally), voice `en-us-ryan-high` from the rhasspy/piper releases.

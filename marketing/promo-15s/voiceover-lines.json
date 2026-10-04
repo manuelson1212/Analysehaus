@@ -1,14 +1,13 @@
 {
-  "hook": "Tired of vague market calls? Maybe up... maybe down?",
+  "hook": "Tired of fake market calls? Maybe up... maybe down?",
   "intro": "I'm the Elliott Wave analyst behind Apex Wave Capital.",
-  "btc": "Bitcoin.",
-  "eth": "Ethereum.",
-  "sol": "Solana.",
+  "btc": "B-T-C.",
+  "eth": "E-T-H.",
+  "sol": "S-O-L.",
   "ndx": "The Nasdaq.",
   "spx": "The S and P five hundred.",
   "zone": "Buy zone.",
   "target": "Target.",
   "inval": "Invalidation.",
-  "every": "In every single call.",
-  "cta": "Get thirty days of analysis, free. Link in bio."
+  "cta": "Get thirty days of free analysis. Link in bio."
 }

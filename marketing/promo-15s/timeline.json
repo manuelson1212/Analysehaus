@@ -1,47 +1,47 @@
 {
  "hook": {
   "start": 0.1,
-  "end": 2.747
+  "end": 2.608
  },
  "intro": {
-  "start": 2.887,
+  "start": 2.748,
   "end": 5.534
  },
  "btc": {
   "start": 5.674,
-  "end": 6.208
+  "end": 6.534
  },
  "eth": {
-  "start": 6.308,
-  "end": 6.947
+  "start": 6.634,
+  "end": 7.11
  },
  "sol": {
-  "start": 7.047,
-  "end": 7.628
+  "start": 7.21,
+  "end": 7.837
  },
  "ndx": {
-  "start": 7.728,
-  "end": 8.343
+  "start": 7.937,
+  "end": 8.564
  },
  "spx": {
-  "start": 8.443,
-  "end": 9.86
+  "start": 8.664,
+  "end": 10.161
  },
  "zone": {
-  "start": 10.0,
-  "end": 10.638
+  "start": 10.301,
+  "end": 10.894
  },
  "target": {
-  "start": 10.708,
-  "end": 11.231
+  "start": 10.964,
+  "end": 11.463
  },
  "inval": {
-  "start": 11.301,
-  "end": 12.102
+  "start": 11.533,
+  "end": 12.323
  },
  "cta": {
-  "start": 12.222,
-  "end": 14.823
+  "start": 12.443,
+  "end": 14.765
  },
  "total": 15.0
 }
