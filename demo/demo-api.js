@@ -190,6 +190,19 @@ async function route(method, path, body) {
   if (method === 'GET' && path === '/api/config') return cfg(st);
   if (method === 'GET' && path === '/api/depot') { const ac = accessNow(st); return { positions: sortPos(st.positions).map((p) => redactPosition(p, ac)), stats: computeStats(st.positions), locked: !ac.active }; }
   if (method === 'GET' && path === '/api/legal') return st.legal || { imprint: '', privacy: '', terms: '' };
+  if (method === 'POST' && path === '/api/cancel') {
+    const t = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+    const c = { name: t(body.name, 120), email: t(body.email, 120).toLowerCase(), kind: body.kind === 'extraordinary' ? 'extraordinary' : 'ordinary', reason: t(body.reason, 2000), effective_date: t(body.effective_date, 10) };
+    if (!c.name) throw new Err(400, 'Name ist erforderlich');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(c.email)) throw new Err(400, 'Bitte gib eine gültige E-Mail-Adresse an');
+    if (c.kind === 'extraordinary' && !c.reason) throw new Err(400, 'Kündigungsgrund ist erforderlich');
+    st.messages ||= []; st.nextMsg ||= 1;
+    const id = st.nextMsg++, created = now().slice(0, 19).replace('T', ' ');
+    const when = c.effective_date ? `zum ${c.effective_date}` : 'zum nächstmöglichen Zeitpunkt';
+    st.messages.unshift({ id, name: c.name, email: c.email, topic: 'Kündigung', message: `Kündigung (${c.kind === 'ordinary' ? 'ordentlich' : 'außerordentlich'}) ${when}. Vorschau: keine Zahlung verbunden.`, created_at: created.slice(0, 16) });
+    store.write(st);
+    return { id, created_at: created, name: c.name, email: c.email, kind: c.kind, reason: c.reason, effective: when, result: 'received', ends: null };
+  }
   if (method === 'GET' && path === '/api/account/me') return meOf(st);
   if (method === 'POST' && path === '/api/account/register') {
     const email = String(body.email || '').trim().toLowerCase();

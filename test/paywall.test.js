@@ -141,3 +141,30 @@ test('legal pages are stored by the admin and served publicly', async () => {
   assert.deepEqual((await call(A, '/api/legal')).data, { imprint: 'Imprint text', privacy: 'Privacy text', terms: '' });
   for (const p of ['/imprint', '/privacy', '/terms', '/account']) assert.equal((await fetch(A + p)).status, 200, p);
 });
+
+test('Verträge hier kündigen: works without login, validates, lands in the inbox', async () => {
+  assert.equal((await fetch(A + '/kuendigen')).status, 200);
+  const bad = await call(A, '/api/cancel', { method: 'POST', body: { name: 'A', email: 'nope' } });
+  assert.equal(bad.status, 400);
+  assert.match((await call(A, '/api/cancel', { method: 'POST', body: { name: 'A B', email: 'member@example.com', kind: 'extraordinary' } })).data.error, /Kündigungsgrund/);
+  const ok = await call(A, '/api/cancel', { method: 'POST', body: { name: 'Max Muster', email: 'Member@Example.com', kind: 'ordinary' } });
+  assert.equal(ok.status, 201);
+  assert.equal(ok.data.effective, 'zum nächstmöglichen Zeitpunkt');
+  assert.equal(ok.data.result, 'received');                       // no Stripe subscription on this account
+  const inbox = (await call(A, '/api/admin/messages', { cookie: adminA })).data;
+  assert.ok(inbox.some((m) => m.topic === 'Kündigung' && m.email === 'member@example.com' && /Bestätigung/.test(m.message)));
+  assert.equal((await call(A, '/api/admin/cancellations', { cookie: adminA })).data.length, 1);
+});
+
+test('checkout needs the withdrawal waiver before Stripe is called', async () => {
+  const login = await call(B, '/api/account/login', { method: 'POST', body: { email: 'pay@example.com', password: 'correct-horse-1' } });
+  const r = await call(B, '/api/account/checkout', { method: 'POST', cookie: login.cookie, body: {} });
+  assert.equal(r.status, 400); assert.match(r.data.error, /Widerrufsrecht/);
+});
+
+test('HTML gets the public address for link previews', async () => {
+  const html = await (await fetch(B + '/')).text();
+  assert.match(html, /<meta property="og:image" content="https:\/\/example\.com\/og-image\.png">/);
+  assert.doesNotMatch(html, /%PUBLIC_URL%/);
+  for (const f of ['/favicon.svg', '/favicon-32.png', '/apple-touch-icon.png', '/og-image.png']) assert.equal((await fetch(B + f)).status, 200, f);
+});

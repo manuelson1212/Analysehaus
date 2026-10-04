@@ -3,17 +3,17 @@ import { readFile, stat } from 'node:fs/promises';
 import { join, extname, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
-import { db, analyses, packs, messages, positions, kv, users, briefings, UPLOAD_DIR } from './lib/db.js';
+import { db, analyses, packs, messages, positions, kv, users, briefings, cancellations, UPLOAD_DIR } from './lib/db.js';
 import { berlinParts, startScheduler } from './lib/scheduler.js';
 import { computeStats } from './lib/depot.js';
 import { accessFor, redactAnalysis, redactPosition } from './lib/access.js';
 import { hashPassword, verifyPassword } from './lib/passwords.js';
-import { paymentsEnabled, createCheckout, createPortal, verifyWebhook, applyEvent } from './lib/billing.js';
+import { paymentsEnabled, createCheckout, createPortal, verifyWebhook, applyEvent, cancelAtPeriodEnd } from './lib/billing.js';
 import {
   ADMIN_PASSWORD, PASSWORD_GENERATED, checkPassword, makeToken, verifyToken,
   parseCookies, sessionCookie, clearCookie, loginAllowed, recordLogin, makeUserToken, userIdFromToken, userCookie, clearUserCookie,
 } from './lib/auth.js';
-import { HttpError, parseAnalysis, parseContact, parsePosition, parseSettings, parseCredentials, parseLegal, saveImage, deleteImage } from './lib/validate.js';
+import { HttpError, parseAnalysis, parseContact, parsePosition, parseSettings, parseCredentials, parseLegal, parseCancellation, saveImage, deleteImage } from './lib/validate.js';
 import { generatePack, generatePromoPack, generateBriefingRecord, finalize, testAgent, providerName } from './lib/agent/index.js';
 
 const PUBLIC_DIR = join(fileURLToPath(new URL('.', import.meta.url)), 'public');
@@ -23,7 +23,7 @@ const MAX_BODY = 12 * 1024 * 1024;
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.ico': 'image/x-icon',
-  '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.json': 'application/json',
+  '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.json': 'application/json', '.txt': 'text/plain; charset=utf-8',
 };
 
 const SECURITY_HEADERS = {
@@ -140,10 +140,13 @@ async function serveFile(req, res, path, cache, status = 200) {
     const ext = extname(path);
     const headers = { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': cache, Vary: 'Accept-Encoding' };
     let body = await readFile(path);
+    // HTML may reference absolute URLs (link previews need them): fill in this site's address.
+    const base = ext === '.html' ? publicUrl(req) : '';
+    if (base) body = Buffer.from(body.toString('utf8').replaceAll('%PUBLIC_URL%', base));
     if (COMPRESSIBLE.has(ext) && body.length > 1024 && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) {
-      const hit = gzCache.get(path);
+      const key = `${path}|${base}`, hit = gzCache.get(key);
       if (hit?.mtime === st.mtimeMs) body = hit.data;
-      else { body = gzipSync(body, { level: 9 }); gzCache.set(path, { mtime: st.mtimeMs, data: body }); }
+      else { body = gzipSync(body, { level: 9 }); gzCache.set(key, { mtime: st.mtimeMs, data: body }); }
       headers['Content-Encoding'] = 'gzip';
     }
     send(res, status, body, headers);
@@ -184,6 +187,26 @@ async function api(req, res, url) {
   }
   if (method === 'GET' && path === '/api/legal') { const out = {}; for (const k of LEGAL_KEYS) out[k] = kv.get(`legal_${k}`, ''); return json(res, 200, out); }
 
+  // "Verträge hier kündigen" (§ 312k BGB): works without login.
+  if (method === 'POST' && path === '/api/cancel') {
+    const c = parseCancellation(await readJson(req));
+    rateLimit(ip, 'cancel');
+    const user = users.byEmail(c.email);
+    let result = 'received';
+    let ends = null;
+    if (user && c.kind === 'ordinary' && paymentsEnabled() && user.stripe_subscription_id && ['active', 'trialing', 'past_due'].includes(user.sub_status)) {
+      try { ends = await cancelAtPeriodEnd({ user }); result = 'scheduled'; }
+      catch (e) { console.error('Stripe cancellation failed:', e.message); result = 'manual'; }
+    } else if (c.kind === 'extraordinary') result = 'manual';
+    const row = cancellations.create({ ...c, user_id: user?.id, result });
+    const when = c.effective_date ? `zum ${c.effective_date}` : 'zum nächstmöglichen Zeitpunkt';
+    messages.create({ name: c.name, email: c.email, topic: 'Kündigung',
+      message: `Kündigung Nr. ${row.id} (${c.kind === 'ordinary' ? 'ordentlich' : 'außerordentlich'}) ${when}.${c.reason ? ` Grund: ${c.reason}` : ''}\n` +
+        (result === 'scheduled' ? `Stripe-Abo automatisch zum Periodenende gekündigt${ends ? ` (${ends.slice(0, 10)})` : ''}.` : user ? 'Bitte manuell prüfen und bearbeiten.' : 'Kein Konto mit dieser E-Mail gefunden: bitte manuell prüfen.') +
+        '\nPflicht: Bestätigung der Kündigung unverzüglich per E-Mail an den Kunden senden (Antworten-Knopf).' });
+    return json(res, 201, { id: row.id, created_at: row.created_at, name: c.name, email: c.email, kind: c.kind, reason: c.reason, effective: when, result, ends });
+  }
+
   // Member accounts
   if (method === 'GET' && path === '/api/account/me') return json(res, 200, me(req));
   if (method === 'POST' && path === '/api/account/register') {
@@ -210,11 +233,16 @@ async function api(req, res, url) {
     if (method === 'POST' && path === '/api/account/checkout') {
       if (!paymentsEnabled()) throw new HttpError(503, 'Payments are not set up yet. Please check back soon.');
       if (accessFor({ user, admin: false, config: { days_left: 0 } }).active) throw new HttpError(400, 'You already have an active membership.');
-      return json(res, 200, { url: await createCheckout({ user, baseUrl: publicUrl(req) }) });
+      const body = await readJson(req);
+      if (body.waiver !== true) throw new HttpError(400, 'Bitte bestätige den Hinweis zum Widerrufsrecht, um fortzufahren.');
+      users.update(user.id, { withdrawal_waiver_at: new Date().toISOString() });
+      try { return json(res, 200, { url: await createCheckout({ user, baseUrl: publicUrl(req), price: getConfig().price }) }); }
+      catch (e) { console.error('Stripe checkout failed:', e.message); throw new HttpError(502, 'Die Zahlungsseite konnte gerade nicht geöffnet werden. Bitte versuche es in ein paar Minuten erneut.'); }
     }
     if (method === 'POST' && path === '/api/account/portal') {
       if (!paymentsEnabled() || !user.stripe_customer_id) throw new HttpError(400, 'There is no billing profile for this account yet.');
-      return json(res, 200, { url: await createPortal({ user, baseUrl: publicUrl(req) }) });
+      try { return json(res, 200, { url: await createPortal({ user, baseUrl: publicUrl(req) }) }); }
+      catch (e) { console.error('Stripe portal failed:', e.message); throw new HttpError(502, 'Die Abo-Verwaltung konnte gerade nicht geöffnet werden. Bitte versuche es in ein paar Minuten erneut.'); }
     }
     if (method === 'DELETE' && path === '/api/account/me') {
       const body = await readJson(req);
@@ -254,6 +282,7 @@ async function api(req, res, url) {
 
   if (method === 'GET' && path === '/api/admin/analyses') return json(res, 200, analyses.list(false));
   if (method === 'GET' && path === '/api/admin/messages') return json(res, 200, messages.list());
+  if (method === 'GET' && path === '/api/admin/cancellations') return json(res, 200, cancellations.list());
 
   // Members and legal texts
   if (method === 'GET' && path === '/api/admin/users') {
@@ -430,7 +459,7 @@ const server = createServer(async (req, res) => {
 
     const pages = { '/': '/index.html', '/analyses': '/analyses.html', '/analysis': '/analysis.html',
       '/pricing': '/pricing.html', '/support': '/support.html', '/depot': '/depot.html', '/admin': '/admin.html',
-      '/account': '/account.html', '/imprint': '/legal.html', '/privacy': '/legal.html', '/terms': '/legal.html' };
+      '/account': '/account.html', '/kuendigen': '/cancel.html', '/imprint': '/legal.html', '/privacy': '/legal.html', '/terms': '/legal.html' };
     const clean = pages[url.pathname] || url.pathname;
     const file = normalize(join(PUBLIC_DIR, clean));
     if (!file.startsWith(PUBLIC_DIR + sep)) return send(res, 403, 'Forbidden');

@@ -278,6 +278,12 @@ button { font: inherit; color: inherit; }
 .progress { height: 8px; background: var(--panel-2); border-radius: 4px; overflow: hidden; } .progress span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s linear; }
 .motion-video { width: min(360px, 100%); aspect-ratio: 9 / 16; background: #000; border: 1px solid var(--line-2); border-radius: 10px; }
 .motion-out { display: grid; gap: 12px; }
+.kv-line { display: grid; grid-template-columns: minmax(120px, 200px) 1fr; gap: 4px 16px; padding-block: 8px; border-bottom: 1px solid var(--line); align-items: baseline; } .kv-line span:last-child { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 520px) { .kv-line { grid-template-columns: 1fr; } }
+.plain-set { border: 0; padding: 0; margin: 0; display: grid; gap: 10px; } .plain-set legend { margin-bottom: 8px; padding: 0; }
+.cancel { padding-bottom: 64px; max-width: 760px; } .legal-nav a.cancel-link { color: var(--accent); }
+@media print { .site-header, .site-footer, .free-bar, .demo-banner, .row { display: none !important; } body { background: #fff; color: #000; } .panel { border-color: #999; background: #fff; } .label, .muted { color: #333; } }
+.sub-box { display: grid; gap: 12px; justify-items: start; padding: 16px; border: 1px solid #5a3b0b; border-radius: var(--radius); background: rgba(247,147,26,.06); }
 .demo-banner { background: var(--accent-dim); color: var(--accent-2); font: 12px var(--mono); padding: 8px 16px; text-align: center; }
 .demo-banner b { color: var(--text); }
 

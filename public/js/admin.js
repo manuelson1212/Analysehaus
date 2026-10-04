@@ -325,6 +325,26 @@ async function renderSettings(flash) {
   const price = h('input', { type: 'text', id: 's-price', inputmode: 'decimal', value: c.price });
   const msg = h('div', {}, flash && notice('ok', flash));
   const ta = (k, label) => { const el = h('textarea', { id: `l-${k}`, rows: 8 }, legal[k] || ''); return [h('div', { class: 'field' }, h('label', { class: 'label', for: `l-${k}` }, label), el), el]; };
+  const IMPRINT_TEMPLATE = `Angaben gemäß § 5 DDG
+
+[Vorname Nachname]
+[Straße Hausnummer]
+[PLZ Ort]
+Deutschland
+
+Kontakt
+Telefon: [Telefonnummer]
+E-Mail: [E-Mail-Adresse]
+
+Umsatzsteuer-ID
+[Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG – falls vorhanden, sonst diesen Abschnitt löschen]
+
+Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV
+[Vorname Nachname]
+[Anschrift wie oben]
+
+Hinweis
+Die Inhalte dieser Website sind Marktanalysen zu Bildungszwecken. Sie sind keine Anlageberatung und keine Aufforderung zum Kauf oder Verkauf von Finanzinstrumenten.`;
   const [fImp, tImp] = ta('imprint', 'Imprint (Impressum)'), [fPriv, tPriv] = ta('privacy', 'Privacy Policy (Datenschutzerklärung)'), [fTerms, tTerms] = ta('terms', 'Terms and cancellation policy (AGB, Widerruf)');
   const msg2 = h('div');
   shell(h('div', { class: 'studio' },
@@ -344,7 +364,11 @@ async function renderSettings(flash) {
       catch (err) { msg2.replaceChildren(notice('err', err.message)); }
     } }, h('h2', {}, 'Legal pages'),
     h('p', { class: 'muted' }, 'Paste the texts from your lawyer or a legal text generator. They are shown as plain text, with paragraphs separated by a blank line. A commercial site in Germany needs an imprint and a privacy policy, and paid memberships need terms with a cancellation policy.'),
-    fImp, fPriv, fTerms, msg2, h('div', { class: 'row' }, h('button', { class: 'btn', type: 'submit' }, 'Save legal pages')))));
+    fImp, h('div', { class: 'row' }, h('button', { class: 'btn sm ghost', type: 'button', onclick: () => {
+      if (tImp.value.trim() && !confirm('Replace the current imprint text with the template?')) return;
+      tImp.value = IMPRINT_TEMPLATE; tImp.focus();
+    } }, 'Insert imprint template'), h('span', { class: 'fine' }, 'Replace every [placeholder] with your details, then save.')),
+    fPriv, fTerms, msg2, h('div', { class: 'row' }, h('button', { class: 'btn', type: 'submit' }, 'Save legal pages')))));
 }
 
 /* ---------- Inbox ---------- */
@@ -456,12 +480,12 @@ async function studioView(analysis, pack, reload, packUrl) {
       const r = await renderMotionVideo({ pack: content, img: chartImg, meta: analysis.market === 'Crypto' || analysis.market === 'Stocks' ? `${analysis.asset} · ${analysis.timeframe}` : analysis.analysis_date,
         onProgress: (p) => { const el = bar.firstChild; if (el) el.style.width = `${Math.round(p * 100)}%`; } });
       const url = URL.createObjectURL(r.blob), ext = r.mime.includes('mp4') ? 'mp4' : 'webm';
-      motionOut.replaceChildren(
+      motionOut.replaceChildren(...[
         h('video', { class: 'motion-video', src: url, controls: true, playsinline: true }),
         h('div', { class: 'row' }, window.__DEMO__ ? h('span', { class: 'muted' }, 'Downloads are turned off in this online preview. On your own site the download button appears here.')
           : h('a', { class: 'btn', href: url, download: `apex-wave-${analysis.asset.replace(/\W+/g, '-')}-${new Date().toISOString().slice(0, 10)}.${ext}` }, `Download ${ext.toUpperCase()}`),
           h('span', { class: 'muted' }, `${Math.round(r.duration)} seconds, 1080×1920, no audio.`)),
-        ext === 'webm' ? h('p', { class: 'fine' }, 'This browser recorded WebM. TikTok and Instagram want H.264 MP4. Render in Chrome or Safari on a computer to get MP4 directly, or convert the file in CapCut or with: ffmpeg -i input.webm -c:v libx264 -pix_fmt yuv420p -movflags +faststart output.mp4') : null);
+        ext === 'webm' ? h('p', { class: 'fine' }, 'This browser recorded WebM. TikTok and Instagram want H.264 MP4. Render in Chrome or Safari on a computer to get MP4 directly, or convert the file in CapCut or with: ffmpeg -i input.webm -c:v libx264 -pix_fmt yuv420p -movflags +faststart output.mp4') : null].filter(Boolean));
     } catch (err) { motionOut.replaceChildren(notice('err', `Rendering failed: ${err.message}`)); }
     motionBtn.disabled = false;
   } }, 'Render motion video');

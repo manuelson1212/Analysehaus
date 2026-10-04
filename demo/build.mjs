@@ -17,7 +17,7 @@ const bundle = async (contents) => (await build({
 // route name -> [html file, page script or null]
 const pages = {
   home: ['public/index.html', 'home'], analyses: ['public/analyses.html', 'gallery'], detail: ['public/analysis.html', 'detail'],
-  depot: ['public/depot.html', 'depot'], account: ['public/account.html', 'account'], legal: ['public/legal.html', 'legal'], pricing: ['public/pricing.html', 'pricing'], support: ['public/support.html', 'support'], admin: ['public/admin.html', 'admin'],
+  depot: ['public/depot.html', 'depot'], account: ['public/account.html', 'account'], cancel: ['public/cancel.html', 'cancel'], legal: ['public/legal.html', 'legal'], pricing: ['public/pricing.html', 'pricing'], support: ['public/support.html', 'support'], admin: ['public/admin.html', 'admin'],
 };
 const templates = {}, code = {};
 for (const [name, [html, script]] of Object.entries(pages)) {

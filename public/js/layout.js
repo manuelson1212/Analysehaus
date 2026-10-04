@@ -18,7 +18,7 @@ function footer() {
     h('div', { class: 'foot-row' },
       h('a', { class: 'brand', 'data-route': 'home', href: routeUrl('home') }, h('span', { class: 'brand-mark', 'aria-hidden': 'true' }), h('span', {}, 'Apex Wave ', h('b', {}, 'Capital'))),
       h('nav', { class: 'foot-nav', 'aria-label': 'Footer' }, NAV.map(([key, label]) => h('a', { 'data-route': key, href: routeUrl(key) }, label)), h('a', { 'data-route': 'admin', href: routeUrl('admin') }, 'Admin'))),
-    h('nav', { class: 'legal-nav', 'aria-label': 'Legal' }, ['imprint', 'privacy', 'terms'].map((k) => h('a', { 'data-route': k, href: routeUrl(k) }, { imprint: 'Imprint', privacy: 'Privacy', terms: 'Terms' }[k]))),
+    h('nav', { class: 'legal-nav', 'aria-label': 'Rechtliches' }, ['imprint', 'privacy', 'terms', 'cancel'].map((k) => h('a', { 'data-route': k, href: routeUrl(k), class: k === 'cancel' ? 'cancel-link' : null }, { imprint: 'Impressum', privacy: 'Datenschutz', terms: 'AGB', cancel: 'Verträge hier kündigen' }[k]))),
     h('p', { class: 'fineprint' }, 'Educational market analysis only. Not financial advice, not an offer or a solicitation. The live depot is a simulation without real money. Trading involves substantial risk of loss; past results do not guarantee future results.'));
 }
 

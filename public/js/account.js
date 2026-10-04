@@ -36,12 +36,19 @@ async function loggedIn(d) {
   const { user, access, payments_enabled } = d;
   const st = statusText(d);
   const out = h('div');
-  const go = async (path, label, btn) => {
+  const go = async (path, label, btn, body = {}) => {
     btn.disabled = true;
-    try { const r = await api(path, { method: 'POST', body: {} }); location.href = r.url; }
+    try { const r = await api(path, { method: 'POST', body }); location.href = r.url; }
     catch (err) { out.replaceChildren(notice('err', err.message)); btn.disabled = false; btn.textContent = label; }
   };
-  const subscribe = h('button', { class: 'btn lg', onclick: () => go('/api/account/checkout', 'Subscribe', subscribe) }, `Subscribe for €${d.config.price} per month`);
+  // Consumer law (DE): explicit consent to start before the withdrawal period ends, and an unambiguous order button.
+  const waiver = h('input', { type: 'checkbox', id: 'waiver' });
+  const waiverBox = h('label', { class: 'check', for: 'waiver' }, waiver, h('span', {}, 'Ich verlange ausdrücklich, dass Apex Wave Capital vor Ablauf der Widerrufsfrist mit der Bereitstellung der Inhalte beginnt. Mir ist bekannt, dass ich dadurch mein Widerrufsrecht verliere.'));
+  const subLabel = `Zahlungspflichtig abonnieren · ${d.config.price} € / Monat`;
+  const subscribe = h('button', { class: 'btn lg', onclick: () => {
+    if (!waiver.checked) return out.replaceChildren(notice('err', 'Bitte bestätige zuerst den Hinweis zum Widerrufsrecht.'));
+    go('/api/account/checkout', subLabel, subscribe, { waiver: true });
+  } }, subLabel);
   const portal = h('button', { class: 'btn ghost', onclick: () => go('/api/account/portal', 'Manage billing', portal) }, 'Manage billing');
   const del = h('details', { class: 'faq' }, h('summary', {}, 'Delete my account'),
     h('p', {}, 'This removes your account and your login. If you have a subscription, cancel it in the billing portal first.'),
@@ -53,18 +60,18 @@ async function loggedIn(d) {
       return h('div', { class: 'row' }, pw, b);
     })());
   const success = new URLSearchParams(location.search).get('checkout') === 'success';
-  root.replaceChildren(
+  root.replaceChildren(...[
     h('div', { class: 'page-head' }, h('p', { class: 'eyebrow' }, 'Account'), h('h1', {}, user.email)),
     success && notice('ok', 'Thank you! Your membership activates within a minute. This page updates automatically.'),
     h('div', { class: 'panel acc-card' },
       h('div', { class: 'row' }, h('h2', {}, st.title), h('span', { class: `badge ${access.active ? 'pub' : ''}` }, access.active ? 'access: on' : 'access: public only')),
       h('p', { class: 'muted' }, st.text),
       h('div', { class: 'row' },
-        !['member', 'comped'].includes(access.reason) && (payments_enabled ? subscribe : h('p', { class: 'muted' }, 'Memberships open soon. Payments are not connected yet.')),
+        !['member', 'comped'].includes(access.reason) && (payments_enabled ? h('div', { class: 'sub-box' }, waiverBox, subscribe, h('p', { class: 'fine' }, 'Monatlich kündbar zum Ende des Abrechnungszeitraums, auch über „Verträge hier kündigen“ im Footer.')) : h('p', { class: 'muted' }, 'Memberships open soon. Payments are not connected yet.')),
         user.has_customer && portal,
         h('button', { class: 'btn ghost', onclick: async () => { await api('/api/account/logout', { method: 'POST', body: {} }); changed(); render(); } }, 'Log out')),
       out),
-    del);
+    del].filter(Boolean)); // replaceChildren would print "false" for skipped items
   if (success && !['member', 'comped'].includes(access.reason)) setTimeout(render, 2500); // webhook may take a moment
 }
 

@@ -43,3 +43,11 @@ test('settings validation', () => {
   assert.throws(() => parseSettings({ free_until: '2026-12-31', price: -1 }), /0 or more/);
   assert.deepEqual(parseSettings({ free_until: '2026-12-31', price: '39' }), { free_until: '2026-12-31', price: 39 });
 });
+
+test('cancellation form validation (German)', async () => {
+  const { parseCancellation } = await import('../lib/validate.js');
+  assert.throws(() => parseCancellation({ name: '', email: 'a@b.co' }), /Namen/);
+  assert.throws(() => parseCancellation({ name: 'A', email: 'x' }), /E-Mail/);
+  assert.throws(() => parseCancellation({ name: 'A', email: 'a@b.co', kind: 'extraordinary' }), /Kündigungsgrund/);
+  assert.deepEqual(parseCancellation({ name: 'A', email: 'A@B.co', effective_date: '2026-12-31' }), { name: 'A', email: 'a@b.co', kind: 'ordinary', reason: '', effective_date: '2026-12-31' });
+});

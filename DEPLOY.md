@@ -42,6 +42,12 @@ Before charging real customers in the EU you need: terms with a cancellation pol
 a way to handle the right of withdrawal for digital content, and correct VAT. Stripe Tax can calculate VAT:
 set `STRIPE_AUTOMATIC_TAX=1` after you have set it up in Stripe. Please have the legal texts checked by a lawyer.
 
+Consumer law details already built in: the footer link "Verträge hier kündigen" (§ 312k BGB) opens a cancellation
+form that works without login, cancels a Stripe subscription at the period end automatically and puts every
+cancellation into the admin Inbox. You must send the customer a confirmation by email right away (use "Reply by email").
+Before checkout the customer must tick the withdrawal-right notice, and the order button reads "Zahlungspflichtig
+abonnieren". Have these texts checked together with your terms.
+
 Not built yet: password reset by email and email verification (both need an email provider). Until then you can
 delete a member or grant access from the admin Members tab.
 
