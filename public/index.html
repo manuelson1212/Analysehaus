@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analysehaus · Elliott Wave Analysis</title>
+  <meta name="description" content="Elliott Wave analyses for crypto and equities, with annotated charts, targets and invalidation levels.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="topbar"><div class="wrap">
+    <a class="brand" href="/">Analyse<b>haus</b></a>
+    <nav class="nav"><a class="on" href="/">Analyses</a><a href="/admin">Admin</a></nav>
+  </div></header>
+  <main class="wrap">
+    <section class="hero">
+      <div class="label">Elliott Wave · Crypto &amp; Equities</div>
+      <h1>Market structure, counted.</h1>
+      <p>Classical Elliott Wave analyses with scenarios, target zones and clear invalidation levels.</p>
+    </section>
+    <div class="filters" id="filters">
+      <button class="chip on" data-market="">All</button>
+      <button class="chip" data-market="Crypto">Crypto</button>
+      <button class="chip" data-market="Stocks">Stocks</button>
+      <input type="text" id="search" placeholder="Search asset or tag…" aria-label="Search">
+    </div>
+    <div class="grid" id="grid" aria-live="polite"></div>
+  </main>
+  <footer class="wrap disclaimer">Educational market analysis only. Not financial advice. Trading involves substantial risk of loss.</footer>
+  <script src="/js/gallery.js" type="module"></script>
+</body>
+</html>
