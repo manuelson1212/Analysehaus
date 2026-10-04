@@ -1,4 +1,4 @@
-import { h, api } from './dom.js';
+import { h, api, imgUrl, detailUrl } from './dom.js';
 import { fileToWebp, loadImage, renderCarouselSlide, renderTikTokCover, canvasToBlob } from './imaging.js';
 import { makeZip } from './zip.js';
 
@@ -63,7 +63,7 @@ async function renderForm() {
     return h('div', { class: 'field' }, h('label', { class: 'label', for: name }, label), f[name]);
   };
 
-  const preview = h('img', { class: `preview ${a ? '' : 'hidden'}`, alt: 'Chart preview', src: a ? `/uploads/${a.image}` : '' });
+  const preview = h('img', { class: `preview ${a ? '' : 'hidden'}`, alt: 'Chart preview', src: a ? imgUrl(a.image) : '' });
   const file = h('input', { type: 'file', accept: 'image/png,image/jpeg,image/webp', class: 'hidden', id: 'file' });
   const drop = h('label', { class: 'drop', for: 'file' }, 'Drop TradingView screenshot here or click to choose');
   const setFile = async (fl) => {
@@ -132,7 +132,7 @@ async function renderList(flash) {
     h('td', {}, h('div', { class: 'actions' },
       h('button', { class: 'btn sm', onclick: () => { current = { tab: 'studio', studioId: a.id }; render(); } }, 'Studio'),
       h('button', { class: 'btn sm ghost', onclick: () => { current = { tab: 'new', editId: a.id }; render(); } }, 'Edit'),
-      h('a', { class: 'btn sm ghost', href: `/analysis?id=${a.id}` }, 'View'),
+      h('a', { class: 'btn sm ghost', href: detailUrl(a.id) }, 'View'),
       h('button', { class: 'btn sm danger', onclick: async () => {
         if (!confirm(`Delete ${a.asset} ${a.timeframe}? This cannot be undone.`)) return;
         await api(`/api/admin/analyses/${a.id}`, { method: 'DELETE' }); renderList('Deleted.');
@@ -207,7 +207,7 @@ async function studioView(analysis, pack, reload) {
 
   let chartImg = null;
   const renderAll = async (saved) => {
-    chartImg ||= await loadImage(`/uploads/${analysis.image}`);
+    chartImg ||= await loadImage(imgUrl(analysis.image));
     const sl = saved.content.instagram.slides;
     const canvases = [renderTikTokCover(saved.content.tiktok.hook, analysis, chartImg),
       ...sl.map((s, i) => renderCarouselSlide(s, i, sl.length, analysis, chartImg))];
@@ -222,6 +222,7 @@ async function studioView(analysis, pack, reload) {
 
   const exportBtn = h('button', { class: 'btn', disabled: pack.status !== 'approved', onclick: async () => {
     const saved = await save('approved'); if (!saved) return;
+    if (window.__DEMO__) { msg.replaceChildren(notice('ok', 'Approved. ZIP download is turned off in this online preview. Use "Save & preview visuals" to see every slide. The full app exports the ZIP.')); return; }
     exportBtn.disabled = true;
     try {
       const { canvases } = await renderAll(saved);

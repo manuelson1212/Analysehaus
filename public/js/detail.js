@@ -1,7 +1,7 @@
-import { h, api } from './dom.js';
+import { h, api, imgUrl } from './dom.js';
 
 const root = document.getElementById('root');
-const id = Number(new URLSearchParams(location.search).get('id'));
+const id = Number(new URLSearchParams(location.search).get('id') || /(\d+)$/.exec(location.hash)?.[1]);
 
 const field = (label, value, cls) => value
   ? h('div', { class: cls }, h('div', { class: 'label' }, label), h('p', {}, value)) : null;
@@ -16,7 +16,7 @@ api(`/api/analyses/${id}`).then((a) => {
       h('h1', {}, `${a.asset} · ${a.timeframe}`)),
     h('div', { class: 'detail' },
       h('div', {},
-        h('img', { class: 'chart', src: `/uploads/${a.image}`, alt: `${a.asset} Elliott Wave chart`, decoding: 'async' }),
+        h('img', { class: 'chart', src: imgUrl(a.image), alt: `${a.asset} Elliott Wave chart`, decoding: 'async' }),
         a.body && h('div', { class: 'panel body-text' }, a.body)),
       h('aside', { class: 'panel kv' },
         field('Wave count', a.wave_count),

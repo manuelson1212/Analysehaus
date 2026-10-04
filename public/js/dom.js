@@ -25,3 +25,7 @@ export async function api(path, opts = {}) {
   if (!res.ok) throw Object.assign(new Error(data.error || `Request failed (${res.status})`), { status: res.status });
   return data;
 }
+
+// URL helpers. In the static demo build images are data URLs and pages are separate .html files.
+export const imgUrl = (image) => (String(image).startsWith('data:') ? image : `/uploads/${image}`);
+export const detailUrl = (id) => (window.__DEMO__ ? `#analysis-${id}` : `/analysis?id=${id}`);

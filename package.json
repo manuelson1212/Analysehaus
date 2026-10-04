@@ -9,9 +9,13 @@
   },
   "scripts": {
     "start": "node server.js",
-    "test": "node --test \"test/*.test.js\""
+    "test": "node --test \"test/*.test.js\"",
+    "demo:build": "node demo/build.mjs demo-dist"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
   }
 }

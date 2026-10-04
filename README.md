@@ -58,3 +58,9 @@ credentials, rate limits or refusals show up as readable messages in the studio.
 ```bash
 npm test
 ```
+
+## Online preview (no server)
+
+`npm run demo:build` writes `demo-dist/index.html`: one self-contained page that runs the real frontend code against a
+browser-only stand-in for the server (`demo/demo-api.js`, data in localStorage, mock agent, sample analyses). Admin
+password in the preview: `demo`. The ZIP download is turned off there; everything else works.

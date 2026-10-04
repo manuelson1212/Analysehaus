@@ -1,4 +1,4 @@
-import { h, api } from './dom.js';
+import { h, api, imgUrl, detailUrl } from './dom.js';
 
 const grid = document.getElementById('grid');
 const search = document.getElementById('search');
@@ -8,8 +8,8 @@ let market = '';
 const summary = (a) => a.scenario_primary || a.wave_count || a.body.slice(0, 160);
 
 function card(a) {
-  return h('a', { class: 'card', href: `/analysis?id=${a.id}` },
-    h('img', { class: 'thumb', src: `/uploads/${a.image}`, alt: `${a.asset} ${a.timeframe} chart`, loading: 'lazy', decoding: 'async' }),
+  return h('a', { class: 'card', href: detailUrl(a.id) },
+    h('img', { class: 'thumb', src: imgUrl(a.image), alt: `${a.asset} ${a.timeframe} chart`, loading: 'lazy', decoding: 'async' }),
     h('div', { class: 'meta' },
       h('div', { class: 'row' },
         h('span', { class: 'asset' }, a.asset),
