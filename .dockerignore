@@ -4,3 +4,8 @@ demo-dist
 .git
 test
 *.md
+.env
+marketing
+brand
+deploy
+docker-compose.yml

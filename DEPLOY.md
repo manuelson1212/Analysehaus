@@ -9,7 +9,7 @@ Costs: the instance type with a disk is a paid plan. Check the current price in 
 2. **New → Blueprint**, choose the `Analysehaus` repository and the branch to deploy. Render reads `render.yaml`.
 3. Fill in the secrets Render asks for:
    - `ADMIN_PASSWORD`: a long, unique password for `/admin`. Never reuse the demo password.
-   - `PUBLIC_URL`: your final address, for example `https://apexwave.capital` (no slash at the end). You can set the Render address first and change it when your domain is connected.
+   - `PUBLIC_URL`: your final address, for example `https://apexwave.pro` (no slash at the end). You can set the Render address first and change it when your domain is connected.
    - `ANTHROPIC_API_KEY`: your key from console.anthropic.com. Set a spending limit there.
    - Leave the Stripe fields empty until payments are set up.
 4. Deploy. When the build is green, open the Render address. `/healthz` should answer `ok`.
@@ -65,4 +65,5 @@ Turn on disk snapshots in the Render dashboard if they are offered for your plan
 
 ## Other hosts
 
-The `Dockerfile` works on any container host. Mount a volume at `/data` and set the same environment variables.
+Hostinger VPS (or any server with Docker): see `DEPLOY-HOSTINGER.md`. It uses `docker-compose.yml`, which adds Caddy for automatic HTTPS.
+The `Dockerfile` alone works on any container host. Mount a volume at `/data` and set the same environment variables.

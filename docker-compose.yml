@@ -1,0 +1,30 @@
+# Own server (e.g. a Hostinger VPS): the site plus Caddy, which gets the HTTPS certificate automatically.
+# Setup: copy deploy/env.example to .env, fill it in, then run `docker compose up -d --build`. Guide: DEPLOY-HOSTINGER.md
+name: apexwave
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PUBLIC_URL: https://${DOMAIN:?set DOMAIN in .env}
+    volumes:
+      - app-data:/data
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on: [app]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+volumes:
+  app-data:
+  caddy-data:
+  caddy-config:

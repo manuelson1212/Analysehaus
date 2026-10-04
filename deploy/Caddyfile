@@ -1,0 +1,8 @@
+# HTTPS certificates for both names are issued and renewed automatically.
+{$DOMAIN} {
+	reverse_proxy app:3000
+}
+
+www.{$DOMAIN} {
+	redir https://{$DOMAIN}{uri} permanent
+}
