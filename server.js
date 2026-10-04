@@ -2,12 +2,12 @@ import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { join, extname, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { analyses, packs, UPLOAD_DIR } from './lib/db.js';
+import { analyses, packs, messages, UPLOAD_DIR } from './lib/db.js';
 import {
   ADMIN_PASSWORD, PASSWORD_GENERATED, checkPassword, makeToken, verifyToken,
   parseCookies, sessionCookie, clearCookie, loginAllowed, recordLogin,
 } from './lib/auth.js';
-import { HttpError, parseAnalysis, saveImage, deleteImage } from './lib/validate.js';
+import { HttpError, parseAnalysis, parseContact, saveImage, deleteImage } from './lib/validate.js';
 import { generatePack, finalize } from './lib/agent/index.js';
 
 const PUBLIC_DIR = join(fileURLToPath(new URL('.', import.meta.url)), 'public');
@@ -48,6 +48,7 @@ async function readJson(req) {
   catch { throw new HttpError(400, 'Invalid JSON'); }
 }
 
+const contactHits = new Map();
 const isAdmin = (req) => verifyToken(parseCookies(req.headers.cookie).ah_session);
 const publicView = ({ updated_at, ...a }) => a;
 
@@ -81,6 +82,17 @@ async function api(req, res, url) {
     return json(res, 200, publicView(a));
   }
 
+  // Contact form (public, rate limited per IP: 5 messages per hour)
+  if (method === 'POST' && path === '/api/contact') {
+    const now = Date.now();
+    const hits = (contactHits.get(ip) || []).filter((t) => now - t < 3600_000);
+    if (hits.length >= 5) throw new HttpError(429, 'Too many messages. Please try again later.');
+    const data = parseContact(await readJson(req));
+    messages.create(data);
+    contactHits.set(ip, [...hits, now]);
+    return json(res, 201, { ok: true });
+  }
+
   // Auth
   if (method === 'POST' && path === '/api/admin/login') {
     if (!loginAllowed(ip)) throw new HttpError(429, 'Too many attempts. Try again later.');
@@ -102,6 +114,9 @@ async function api(req, res, url) {
   if (!isAdmin(req)) throw new HttpError(401, 'Not logged in');
 
   if (method === 'GET' && path === '/api/admin/analyses') return json(res, 200, analyses.list(false));
+  if (method === 'GET' && path === '/api/admin/messages') return json(res, 200, messages.list());
+  m = /^\/api\/admin\/messages\/(\d+)$/.exec(path);
+  if (m && method === 'DELETE') { messages.remove(Number(m[1])); return json(res, 200, { ok: true }); }
 
   if (method === 'POST' && path === '/api/admin/analyses') {
     const body = await readJson(req);
@@ -169,7 +184,9 @@ const server = createServer(async (req, res) => {
       return await serveFile(res, join(UPLOAD_DIR, name), 'public, max-age=31536000, immutable');
     }
 
-    const clean = { '/': '/index.html', '/admin': '/admin.html', '/analysis': '/analysis.html' }[url.pathname] || url.pathname;
+    const pages = { '/': '/index.html', '/analyses': '/analyses.html', '/analysis': '/analysis.html', '/about': '/about.html',
+      '/pricing': '/pricing.html', '/support': '/support.html', '/admin': '/admin.html' };
+    const clean = pages[url.pathname] || url.pathname;
     const file = normalize(join(PUBLIC_DIR, clean));
     if (!file.startsWith(PUBLIC_DIR + sep)) return send(res, 403, 'Forbidden');
     return await serveFile(res, file, extname(file) === '.html' ? 'no-cache' : 'public, max-age=3600');

@@ -3,7 +3,6 @@ import { fileToWebp, loadImage, renderCarouselSlide, renderTikTokCover, canvasTo
 import { makeZip } from './zip.js';
 
 const app = document.getElementById('app');
-const logoutLink = document.getElementById('logout');
 let current = { tab: 'new', editId: null, studioId: null };
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -11,7 +10,6 @@ const notice = (kind, text) => h('div', { class: `msg ${kind}`, role: 'status' }
 
 /* ---------- Login ---------- */
 function showLogin(error) {
-  logoutLink.classList.add('hidden');
   const input = h('input', { type: 'password', id: 'pw', autocomplete: 'current-password', required: true });
   const msg = h('div');
   const form = h('form', { class: 'login form', onsubmit: async (e) => {
@@ -27,23 +25,24 @@ function showLogin(error) {
   input.focus();
 }
 
-logoutLink.addEventListener('click', async (e) => {
-  e.preventDefault();
+async function logout() {
   await api('/api/admin/logout', { method: 'POST', body: {} });
   showLogin();
-});
+}
 
 /* ---------- Shell ---------- */
 function shell(content) {
   const tab = (id, label) => h('button', { class: `tab ${current.tab === id ? 'on' : ''}`, onclick: () => { current = { tab: id, editId: null, studioId: id === 'studio' ? current.studioId : null }; render(); } }, label);
   app.replaceChildren(
-    h('div', { class: 'tabs', role: 'tablist' }, tab('new', current.editId ? 'Edit analysis' : 'New analysis'), tab('list', 'Analyses'), tab('studio', 'Content studio')),
+    h('div', { class: 'tabs', role: 'tablist' }, tab('new', current.editId ? 'Edit analysis' : 'New analysis'), tab('list', 'Analyses'), tab('studio', 'Content studio'), tab('inbox', 'Inbox'),
+      h('span', { class: 'tabs-spacer' }), h('button', { class: 'tab', onclick: logout }, 'Log out')),
     content);
 }
 
 function render() {
   if (current.tab === 'new') return renderForm();
   if (current.tab === 'list') return renderList();
+  if (current.tab === 'inbox') return renderInbox();
   return renderStudio();
 }
 
@@ -81,7 +80,7 @@ async function renderForm() {
   document.onpaste = (e) => { const it = [...(e.clipboardData?.files || [])][0]; if (it && current.tab === 'new') setFile(it); };
 
   const market = h('select', { id: 'market' }, ['Crypto', 'Stocks'].map((m) => h('option', { value: m, selected: a?.market === m }, m)));
-  const status = h('select', { id: 'status' }, [['draft', 'Draft'], ['published', 'Published']].map(([v, l]) => h('option', { value: v, selected: a?.status === v }, l)));
+  const status = h('select', { id: 'status' }, [['draft', 'Draft'], ['published', 'Published']].map(([v, l]) => h('option', { value: v, selected: (a?.status ?? 'published') === v }, l)));
   const date = h('input', { type: 'date', id: 'date', value: a?.analysis_date ?? today(), required: true });
   const submit = h('button', { class: 'btn', type: 'submit' }, a ? 'Save changes' : 'Create analysis');
 
@@ -100,7 +99,7 @@ async function renderForm() {
       const saved = a ? await api(`/api/admin/analyses/${a.id}`, { method: 'PUT', body })
         : await api('/api/admin/analyses', { method: 'POST', body });
       current = { tab: 'list', editId: null, studioId: saved.id };
-      await renderList(`Saved ${saved.asset} ${saved.timeframe}.`);
+      await renderList(`Saved ${saved.asset} ${saved.timeframe} (${saved.status}).`, saved);
     } catch (err) { msg.replaceChildren(notice('err', err.message)); submit.disabled = false; }
   } },
   h('div', { class: 'two three' }, input('asset', 'Asset', { placeholder: 'BTC/USD', required: true, maxlength: 40 }),
@@ -122,7 +121,7 @@ async function renderForm() {
 }
 
 /* ---------- List ---------- */
-async function renderList(flash) {
+async function renderList(flash, saved) {
   shell(h('p', { class: 'muted' }, 'Loading…'));
   const items = await api('/api/admin/analyses');
   const rows = items.map((a) => h('tr', {},
@@ -137,10 +136,22 @@ async function renderList(flash) {
         if (!confirm(`Delete ${a.asset} ${a.timeframe}? This cannot be undone.`)) return;
         await api(`/api/admin/analyses/${a.id}`, { method: 'DELETE' }); renderList('Deleted.');
       } }, 'Delete')))));
-  shell(h('div', {}, flash && notice('ok', flash),
+  shell(h('div', {}, flash && h('div', { class: 'msg ok', role: 'status' }, flash, ' ', saved?.status === 'published' ? h('a', { href: detailUrl(saved.id) }, 'View on the website →') : '(draft: set it to Published to show it on the website)'),
     items.length ? h('div', { class: 'scroll-x' }, h('table', { class: 'table' },
       h('thead', {}, h('tr', {}, ['Analysis', 'Date', 'Status', ''].map((t) => h('th', {}, t)))), h('tbody', {}, rows)))
       : h('div', { class: 'empty' }, 'No analyses yet. Create your first one.')));
+}
+
+/* ---------- Inbox ---------- */
+async function renderInbox() {
+  shell(h('p', { class: 'muted' }, 'Loading…'));
+  const items = await api('/api/admin/messages');
+  shell(items.length ? h('div', { class: 'inbox' }, items.map((m) => h('article', { class: 'block' },
+    h('div', { class: 'row' }, h('b', {}, m.name), h('span', { class: 'muted' }, m.email), h('span', { class: 'badge' }, m.topic), h('span', { class: 'label' }, m.created_at)),
+    h('p', { class: 'msg-body' }, m.message),
+    h('div', { class: 'row' }, h('a', { class: 'btn sm ghost', href: `mailto:${m.email}?subject=${encodeURIComponent('Re: ' + m.topic)}` }, 'Reply by email'),
+      h('button', { class: 'btn sm danger', onclick: async () => { await api(`/api/admin/messages/${m.id}`, { method: 'DELETE' }); renderInbox(); } }, 'Delete')))))
+    : h('div', { class: 'empty' }, 'No messages yet. Messages from the support form appear here.'));
 }
 
 /* ---------- Content studio ---------- */
@@ -270,7 +281,6 @@ async function studioView(analysis, pack, reload) {
 async function boot() {
   const me = await api('/api/admin/me').catch(() => ({ admin: false }));
   if (!me.admin) return showLogin();
-  logoutLink.classList.remove('hidden');
   render().catch((e) => (e.status === 401 ? showLogin('Session expired.') : app.replaceChildren(notice('err', e.message))));
 }
 boot();

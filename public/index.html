@@ -4,30 +4,88 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Analysehaus · Elliott Wave Analysis</title>
-  <meta name="description" content="Elliott Wave analyses for crypto and equities, with annotated charts, targets and invalidation levels.">
+  <meta name="description" content="Classical Elliott Wave analyses for crypto and equities, each with scenarios, targets and a named invalidation level.">
+  <meta name="theme-color" content="#08090b">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-  <header class="topbar"><div class="wrap">
-    <a class="brand" href="/">Analyse<b>haus</b></a>
-    <nav class="nav"><a class="on" href="/">Analyses</a><a href="/admin">Admin</a></nav>
-  </div></header>
-  <main class="wrap">
-    <section class="hero">
-      <div class="label">Elliott Wave · Crypto &amp; Equities</div>
-      <h1>Market structure, counted.</h1>
-      <p>Classical Elliott Wave analyses with scenarios, target zones and clear invalidation levels.</p>
+<body data-page="home">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header" id="site-header"></header>
+  <main id="main">
+    <section class="hero wrap">
+      <div class="hero-copy">
+        <p class="eyebrow">Classical Elliott Wave · Crypto &amp; Equities</p>
+        <h1>Count the waves.<br><em>Know where you are wrong.</em></h1>
+        <p class="lede">Analysehaus publishes Elliott Wave analyses with the full picture: the count, the scenarios, the targets and the exact level that proves the count wrong.</p>
+        <div class="cta-row">
+          <a class="btn lg" data-route="analyses" href="/analyses">Browse analyses</a>
+          <a class="btn lg ghost" data-route="pricing" href="/pricing">See membership</a>
+        </div>
+      </div>
+      <div class="wave-card" id="wave-card">
+        <div id="wave"></div>
+      </div>
     </section>
-    <div class="filters" id="filters">
-      <button class="chip on" data-market="">All</button>
-      <button class="chip" data-market="Crypto">Crypto</button>
-      <button class="chip" data-market="Stocks">Stocks</button>
-      <input type="text" id="search" placeholder="Search asset or tag…" aria-label="Search">
-    </div>
-    <div class="grid" id="grid" aria-live="polite"></div>
+
+    <section class="strip">
+      <div class="wrap strip-grid">
+        <div><b id="count">–</b><span>published analyses</span></div>
+        <div><b>5 + 3</b><span>impulse and correction structure</span></div>
+        <div><b>1 level</b><span>named as invalidation in every analysis</span></div>
+        <div><b>2 markets</b><span>crypto and equities</span></div>
+      </div>
+    </section>
+
+    <section class="section wrap">
+      <div class="section-head reveal"><p class="eyebrow">What you get</p><h2>Analysis you can check, not just follow.</h2></div>
+      <div class="features">
+        <article class="feature reveal"><span class="f-ico" aria-hidden="true">①</span><h3>The full count</h3><p>Wave labels on the chart and the reasoning written out, so you can verify the logic yourself.</p></article>
+        <article class="feature reveal"><span class="f-ico" aria-hidden="true">②</span><h3>Scenarios, not predictions</h3><p>A primary and an alternate path, each with the levels that confirm it.</p></article>
+        <article class="feature reveal"><span class="f-ico" aria-hidden="true">③</span><h3>Invalidation first</h3><p>Every analysis names the price that proves the count wrong. No count without an exit.</p></article>
+        <article class="feature reveal"><span class="f-ico" aria-hidden="true">④</span><h3>Crypto and equities</h3><p>Major coins and indices, from intraday to daily timeframes.</p></article>
+      </div>
+    </section>
+
+    <section class="section dark-band">
+      <div class="wrap rules">
+        <div class="section-head reveal"><p class="eyebrow">The method</p><h2>Three rules every impulse must obey.</h2>
+          <p class="muted">If one is broken, the count is wrong. Hover a rule to see it in the chart above.</p></div>
+        <ol class="rule-list">
+          <li class="rule reveal" tabindex="0" data-wave="2"><span class="rule-n">Wave 2</span><p>never retraces more than 100% of wave 1.</p></li>
+          <li class="rule reveal" tabindex="0" data-wave="3"><span class="rule-n">Wave 3</span><p>is never the shortest of the three impulse waves 1, 3 and 5.</p></li>
+          <li class="rule reveal" tabindex="0" data-wave="4"><span class="rule-n">Wave 4</span><p>never enters the price territory of wave 1.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section wrap">
+      <div class="section-head reveal"><p class="eyebrow">How an analysis is made</p><h2>From chart to published call, in four steps.</h2></div>
+      <ol class="steps">
+        <li class="step reveal"><b>Count</b><p>Label the impulse and correction waves on the chart.</p></li>
+        <li class="step reveal"><b>Scenarios</b><p>Define the primary path and the alternate.</p></li>
+        <li class="step reveal"><b>Invalidation</b><p>Set the level at which the count no longer holds.</p></li>
+        <li class="step reveal"><b>Publish</b><p>Chart, count and levels go online together.</p></li>
+      </ol>
+    </section>
+
+    <section class="section wrap">
+      <div class="section-head row-between reveal">
+        <div><p class="eyebrow">Latest</p><h2>Recent analyses</h2></div>
+        <a class="link-arrow" data-route="analyses" href="/analyses">All analyses →</a>
+      </div>
+      <div class="grid" id="latest" aria-live="polite"></div>
+    </section>
+
+    <section class="wrap">
+      <div class="cta-band reveal">
+        <div><h2>Be first to see the next count.</h2><p>Join the membership waitlist. No payment is taken yet.</p></div>
+        <a class="btn lg" data-route="pricing" href="/pricing">View membership</a>
+      </div>
+    </section>
   </main>
-  <footer class="wrap disclaimer">Educational market analysis only. Not financial advice. Trading involves substantial risk of loss.</footer>
-  <script src="/js/gallery.js" type="module"></script>
+  <footer class="site-footer" id="site-footer"></footer>
+  <script type="module" src="/js/layout.js"></script>
+  <script type="module" src="/js/home.js"></script>
 </body>
 </html>

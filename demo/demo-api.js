@@ -4,6 +4,7 @@ import { generate as mock } from '../lib/agent/mock.js';
 import { finalize } from '../lib/agent/index.js';
 
 window.__DEMO__ = true;
+window.__DEMO_ROUTER__ = true;
 const KEY = 'analysehaus-demo-v1';
 const DEMO_PASSWORD = 'demo';
 let memory = null;
@@ -19,9 +20,10 @@ const store = {
     catch { throw Object.assign(new Error('Browser storage is full. Delete an analysis or use smaller screenshots.'), { status: 507 }); }
   },
 };
+let adminFlag = false; // kept in memory so login works even when sessionStorage is blocked
 const session = {
-  get: () => { try { return sessionStorage.getItem('ah-admin') === '1'; } catch { return memory?.admin === true; } },
-  set: (v) => { try { sessionStorage.setItem('ah-admin', v ? '1' : '0'); } catch { if (memory) memory.admin = v; } },
+  get: () => { try { if (sessionStorage.getItem('ah-admin') === '1') return true; } catch { /* blocked */ } return adminFlag; },
+  set: (v) => { adminFlag = v; try { sessionStorage.setItem('ah-admin', v ? '1' : '0'); } catch { /* blocked */ } },
 };
 
 /* ---------- Seed data: charts are drawn on canvas so the demo needs no image files ---------- */
@@ -82,7 +84,7 @@ function seedState() {
       image: drawChart([[0, 50], [0.3, 70], [0.45, 58], [0.6, 66], [0.75, 60], [1, 63]], [[0.3, 70, '(3)', 1], [0.45, 58, 'a', 0], [0.6, 66, 'b', 1], [0.75, 60, 'c', 0]],
         [{ v: 50, color: '#ef5350', dash: true, text: 'invalid' }], 37, 'SOL/USD · 1H · DEMO CHART') },
   ];
-  return { analyses, packs: {}, nextId: 4 };
+  return { analyses, packs: {}, nextId: 4, messages: [], nextMsg: 1 };
 }
 
 const ready = (async () => { if (!store.read()) store.write(seedState()); })();
@@ -118,6 +120,16 @@ async function route(method, path, body) {
     if (!a || (a.status !== 'published' && !session.get())) throw new Err(404, 'Not found');
     return a;
   }
+  if (method === 'POST' && path === '/api/contact') {
+    const t = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+    const m = { name: t(body.name, 80), email: t(body.email, 120), topic: t(body.topic, 60) || 'General question', message: t(body.message, 4000) };
+    if (!m.name) throw new Err(400, 'Name is required');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(m.email)) throw new Err(400, 'Please enter a valid email address');
+    if (!m.message) throw new Err(400, 'Message is required');
+    st.messages ||= []; st.nextMsg ||= 1;
+    st.messages.unshift({ ...m, id: st.nextMsg++, created_at: now().slice(0, 16).replace('T', ' ') });
+    store.write(st); return { ok: true };
+  }
   if (method === 'POST' && path === '/api/admin/login') {
     if (body.password !== DEMO_PASSWORD) throw new Err(401, 'Wrong password. In this demo the password is "demo".');
     session.set(true); return { ok: true };
@@ -128,6 +140,9 @@ async function route(method, path, body) {
   if (!session.get()) throw new Err(401, 'Not logged in');
 
   if (method === 'GET' && path === '/api/admin/analyses') return [...st.analyses].sort(byDate);
+  if (method === 'GET' && path === '/api/admin/messages') return st.messages || [];
+  m = /^\/api\/admin\/messages\/(\d+)$/.exec(path);
+  if (m && method === 'DELETE') { st.messages = (st.messages || []).filter((x) => x.id !== +m[1]); store.write(st); return { ok: true }; }
   if (method === 'POST' && path === '/api/admin/analyses') {
     const data = parse(body);
     if (!/^data:image\/(png|jpeg|webp);base64,/.test(body.image || '')) throw new Err(400, 'A chart screenshot is required');

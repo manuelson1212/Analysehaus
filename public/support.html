@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Support · Analysehaus</title>
+  <meta name="description" content="Answers to common questions and a contact form for Analysehaus.">
+  <meta name="theme-color" content="#08090b">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body data-page="support">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header" id="site-header"></header>
+  <main id="main">
+    <section class="wrap page-head">
+      <p class="eyebrow">Support</p>
+      <h1>How can we help?</h1>
+      <p class="lede">Find a quick answer below or send us a message.</p>
+    </section>
+    <section class="wrap two-col support">
+      <div>
+        <h2>Frequently asked</h2>
+        <details class="faq"><summary>Is this financial advice?</summary><p>No. Analysehaus publishes educational market analysis. It is not personal advice and not a recommendation to buy or sell anything.</p></details>
+        <details class="faq"><summary>What does “invalidation level” mean?</summary><p>It is the price at which the published wave count is no longer valid. If the market trades beyond it, the analysis is void and a new count is needed.</p></details>
+        <details class="faq"><summary>Which markets do you cover?</summary><p>Major cryptocurrencies and equity indices, plus single stocks when the structure is clear.</p></details>
+        <details class="faq"><summary>How often do you publish?</summary><p>When a setup is worth documenting. There is no fixed schedule.</p></details>
+        <details class="faq"><summary>How do I get membership?</summary><p>Join the waitlist from the pricing page or use the form here. Payments are not live yet.</p></details>
+      </div>
+      <form class="panel form" id="contact-form" novalidate>
+        <h2>Send a message</h2>
+        <div class="field"><label class="label" for="c-name">Name</label><input type="text" id="c-name" name="name" maxlength="80" autocomplete="name" required></div>
+        <div class="field"><label class="label" for="c-email">Email</label><input type="text" id="c-email" name="email" maxlength="120" autocomplete="email" inputmode="email" required></div>
+        <div class="field"><label class="label" for="c-topic">Topic</label>
+          <select id="c-topic" name="topic"><option>General question</option><option>Membership waitlist</option><option>Method question</option><option>Institutional enquiry</option><option>Bug report</option></select></div>
+        <div class="field"><label class="label" for="c-message">Message</label><textarea id="c-message" name="message" maxlength="4000" rows="5" required></textarea></div>
+        <div id="contact-msg"></div>
+        <button class="btn" type="submit" id="contact-send">Send message</button>
+      </form>
+    </section>
+  </main>
+  <footer class="site-footer" id="site-footer"></footer>
+  <script type="module" src="/js/layout.js"></script>
+  <script type="module" src="/js/support.js"></script>
+</body>
+</html>

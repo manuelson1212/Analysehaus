@@ -64,3 +64,10 @@ npm test
 `npm run demo:build` writes `demo-dist/index.html`: one self-contained page that runs the real frontend code against a
 browser-only stand-in for the server (`demo/demo-api.js`, data in localStorage, mock agent, sample analyses). Admin
 password in the preview: `demo`. The ZIP download is turned off there; everything else works.
+
+## Pages
+
+`/` home (interactive Elliott Wave diagram) · `/analyses` · `/analysis?id=…` · `/about` · `/pricing` · `/support` · `/admin`.
+Pricing is example content; no payment is connected. The support form stores messages in the admin Inbox
+(5 messages per hour per IP). Before going public, add the legal pages your jurisdiction requires (for Germany:
+Impressum and Datenschutzerklärung).

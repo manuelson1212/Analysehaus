@@ -3,17 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex">
   <title>Admin · Analysehaus</title>
+  <meta name="description" content="Admin area">
+  <meta name="theme-color" content="#08090b">
+  <meta name="robots" content="noindex">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-  <header class="topbar"><div class="wrap">
-    <a class="brand" href="/">Analyse<b>haus</b></a>
-    <nav class="nav"><a href="/">Analyses</a><a class="on" href="/admin">Admin</a><a href="#" id="logout" class="hidden">Logout</a></nav>
-  </div></header>
-  <main class="wrap" id="app"></main>
-  <script src="/js/admin.js" type="module"></script>
+<body data-page="admin">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header" id="site-header"></header>
+  <main id="main" class="wrap"><div id="app"></div></main>
+  <footer class="site-footer" id="site-footer"></footer>
+  <script type="module" src="/js/layout.js"></script>
+  <script type="module" src="/js/admin.js"></script>
 </body>
 </html>

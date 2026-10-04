@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pricing · Analysehaus</title>
+  <meta name="description" content="Membership plans for Analysehaus Elliott Wave analysis.">
+  <meta name="theme-color" content="#08090b">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body data-page="pricing">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header" id="site-header"></header>
+  <main id="main">
+    <section class="wrap page-head center">
+      <p class="eyebrow">Pricing</p>
+      <h1>Choose how you follow the waves.</h1>
+      <p class="lede">The public analyses stay free. Membership adds the full written analysis and early access.</p>
+      <div class="notice small">Example pricing. Payments are not connected yet. Joining the waitlist is free and takes no payment details.</div>
+      <div class="toggle" role="group" aria-label="Billing period">
+        <button class="chip on" data-period="month" aria-pressed="true">Monthly</button>
+        <button class="chip" data-period="year" aria-pressed="false">Yearly <span class="save">2 months free</span></button>
+      </div>
+    </section>
+    <section class="wrap plans">
+      <article class="plan reveal">
+        <h3>Public</h3><p class="muted">For anyone who wants to read along.</p>
+        <p class="price"><b>0</b><span>€ free</span></p>
+        <ul class="ticks"><li>Every published analysis</li><li>Chart, count and invalidation level</li><li>Crypto and equities</li></ul>
+        <a class="btn ghost block" data-route="analyses" href="/analyses">Browse analyses</a>
+      </article>
+      <article class="plan featured reveal">
+        <span class="ribbon">Most popular</span>
+        <h3>Member</h3><p class="muted">For traders who want the full picture.</p>
+        <p class="price"><b id="price-member">29</b><span>€ <i id="note-member">per month</i></span></p>
+        <ul class="ticks"><li>Everything in Public</li><li>Full written analysis for every post</li><li>Alternate scenarios with target zones</li><li>Early access before public release</li></ul>
+        <a class="btn block" data-route="support" href="/support?topic=waitlist">Join the waitlist</a>
+      </article>
+      <article class="plan reveal">
+        <h3>Institutional</h3><p class="muted">For desks, funds and publishers.</p>
+        <p class="price"><b>Custom</b><span>on request</span></p>
+        <ul class="ticks"><li>Everything in Member</li><li>Coverage requests for specific assets</li><li>Direct line to the analyst</li></ul>
+        <a class="btn ghost block" data-route="support" href="/support">Talk to us</a>
+      </article>
+    </section>
+    <section class="section wrap narrow">
+      <div class="section-head reveal"><h2>Billing questions</h2></div>
+      <details class="faq reveal"><summary>Can I pay already?</summary><p>Not yet. Payments will be switched on once membership launches. The waitlist reserves your place without payment.</p></details>
+      <details class="faq reveal"><summary>Can I cancel at any time?</summary><p>Yes. Membership will be cancellable at any time and stay active until the end of the paid period.</p></details>
+      <details class="faq reveal"><summary>Is membership financial advice?</summary><p>No. All analyses are educational market analysis. They are not personal advice and not a recommendation to buy or sell.</p></details>
+    </section>
+  </main>
+  <footer class="site-footer" id="site-footer"></footer>
+  <script type="module" src="/js/layout.js"></script>
+  <script type="module" src="/js/pricing.js"></script>
+</body>
+</html>

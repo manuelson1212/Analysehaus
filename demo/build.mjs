@@ -1,4 +1,4 @@
-// Builds the static, backend-free demo as ONE page (gallery, detail and admin switch via the URL hash).
+// Builds the static, backend-free demo as ONE page. All site pages switch via the URL hash.
 // Usage: node demo/build.mjs <outDir>
 import { build } from 'esbuild';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -6,9 +6,7 @@ import { join } from 'node:path';
 
 const out = process.argv[2] || 'demo-dist';
 mkdirSync(out, { recursive: true });
-const css = readFileSync('public/css/style.css', 'utf8') + `
-.demo-banner { background: var(--accent-dim); color: var(--accent); font: 12px var(--mono); padding: 8px 16px; text-align: center; }
-.demo-banner b { color: var(--text); }`;
+const css = readFileSync('public/css/style.css', 'utf8');
 
 const bundle = async (contents) => (await build({
   stdin: { contents, resolveDir: join(process.cwd(), 'public'), sourcefile: 'entry.js' },
@@ -16,13 +14,17 @@ const bundle = async (contents) => (await build({
   external: ['./claude.js', '@anthropic-ai/sdk'],
 })).outputFiles[0].text.replaceAll('</script', '<\\/script');
 
-const pages = { gallery: ['public/index.html', 'public/js/gallery.js'], detail: ['public/analysis.html', 'public/js/detail.js'], admin: ['public/admin.html', 'public/js/admin.js'] };
+// route name -> [html file, page script or null]
+const pages = {
+  home: ['public/index.html', 'home'], analyses: ['public/analyses.html', 'gallery'], detail: ['public/analysis.html', 'detail'],
+  about: ['public/about.html', null], pricing: ['public/pricing.html', 'pricing'], support: ['public/support.html', 'support'], admin: ['public/admin.html', 'admin'],
+};
 const templates = {}, code = {};
-for (const [name, [html, entry]] of Object.entries(pages)) {
-  templates[name] = /<main[^>]*>([\s\S]*?)<\/main>/.exec(readFileSync(html, 'utf8'))[0];
-  code[name] = await bundle(`import '../${entry}';`);
+for (const [name, [html, script]] of Object.entries(pages)) {
+  templates[name] = /<main[^>]*>[\s\S]*?<\/main>/.exec(readFileSync(html, 'utf8'))[0];
+  code[name] = script ? await bundle(`import '../public/js/${script}.js';`) : '';
 }
-const api = await bundle(`import '../demo/demo-api.js';`);
+const api = await bundle(`import '../demo/demo-api.js';\nimport '../public/js/layout.js';`);
 
 const router = `
 const T = ${JSON.stringify(templates).replaceAll('</', '<\\/')};
@@ -30,27 +32,24 @@ const PAGES = {${Object.entries(code).map(([k, v]) => `${k}: () => {${v}}`).join
 const view = document.getElementById('view');
 function route() {
   const hash = location.hash.slice(1);
-  const name = hash.startsWith('analysis') ? 'detail' : hash === 'admin' ? 'admin' : 'gallery';
-  document.querySelectorAll('[data-route]').forEach((a) => a.classList.toggle('on', a.dataset.route === (name === 'admin' ? 'admin' : 'gallery')));
-  const logout = document.getElementById('logout');
-  logout.replaceWith(logout.cloneNode(true)); // drop old click listeners
-  document.getElementById('logout').classList.add('hidden');
+  const name = hash.startsWith('analysis') ? 'detail' : (T[hash] ? hash : 'home');
   view.innerHTML = T[name];
-  window.scrollTo(0, 0);
+  const L = window.__layout;
+  L.setActive(name); L.bindLinks(view); window.scrollTo(0, 0);
+  document.documentElement.classList.remove('nav-open');
   PAGES[name]();
+  L.initReveal(view);
 }
 addEventListener('hashchange', route);
+window.__layout.mountLayout('home');
 route();`;
 
 const html = `<title>Analysehaus</title>
 <style>${css}</style>
-<header class="topbar"><div class="wrap">
-  <a class="brand" href="#gallery">Analyse<b>haus</b></a>
-  <nav class="nav"><a data-route="gallery" href="#gallery">Analyses</a><a data-route="admin" href="#admin">Admin</a><a href="#admin" id="logout" class="hidden">Logout</a></nav>
-</div></header>
-<div class="demo-banner">Online preview · your data stays in this browser · admin password: <b>demo</b></div>
+<header class="site-header" id="site-header"></header>
+<div class="demo-banner">Online preview · your data stays in this browser · <a data-route="admin" href="#admin">Open admin</a> (password <b>demo</b>)</div>
 <div id="view"></div>
-<footer class="wrap disclaimer">Educational market analysis only. Not financial advice. Trading involves substantial risk of loss.</footer>
+<footer class="site-footer" id="site-footer"></footer>
 <script>${api}</script>
 <script>${router}</script>
 `;

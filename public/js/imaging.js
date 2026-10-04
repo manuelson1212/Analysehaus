@@ -1,5 +1,5 @@
 // Client-side image handling: downscale uploads to WebP, render branded slides on canvas.
-export async function fileToWebp(file, maxW = 1800) {
+export async function fileToWebp(file, maxW = 1600) {
   const bmp = await createImageBitmap(file);
   const scale = Math.min(1, maxW / bmp.width);
   const c = document.createElement('canvas');
@@ -8,7 +8,8 @@ export async function fileToWebp(file, maxW = 1800) {
   c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
   bmp.close();
   let blob = await new Promise((r) => c.toBlob(r, 'image/webp', 0.86));
-  if (!blob || blob.type !== 'image/webp') blob = await new Promise((r) => c.toBlob(r, 'image/png'));
+  // Safari cannot encode WebP; JPEG keeps the file small enough for any storage.
+  if (!blob || blob.type !== 'image/webp') blob = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.86));
   return blobToDataUrl(blob);
 }
 

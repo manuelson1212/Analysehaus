@@ -1,4 +1,4 @@
-import { h, api, imgUrl } from './dom.js';
+import { h, api, imgUrl, routeUrl } from './dom.js';
 
 const root = document.getElementById('root');
 const id = Number(new URLSearchParams(location.search).get('id') || /(\d+)$/.exec(location.hash)?.[1]);
@@ -9,7 +9,8 @@ const field = (label, value, cls) => value
 api(`/api/analyses/${id}`).then((a) => {
   document.title = `${a.asset} ${a.timeframe} · Analysehaus`;
   root.replaceChildren(
-    h('div', { class: 'hero' },
+    h('div', { class: 'page-head' },
+      h('a', { class: 'link-arrow back', href: routeUrl('analyses') }, '← All analyses'),
       h('div', { class: 'row' },
         h('span', { class: 'label' }, `${a.market} · ${a.analysis_date}`),
         a.status !== 'published' && h('span', { class: 'badge' }, 'draft')),

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analyses · Analysehaus</title>
+  <meta name="description" content="All published Elliott Wave analyses for crypto and equities.">
+  <meta name="theme-color" content="#08090b">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body data-page="analyses">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header" id="site-header"></header>
+  <main id="main" class="wrap">
+    <section class="page-head">
+      <p class="eyebrow">Analyses</p>
+      <h1>Market structure, counted.</h1>
+      <p class="lede">Every published Elliott Wave analysis, with scenarios, target zones and the invalidation level.</p>
+    </section>
+    <div class="filters" id="filters">
+      <button class="chip on" data-market="">All</button>
+      <button class="chip" data-market="Crypto">Crypto</button>
+      <button class="chip" data-market="Stocks">Stocks</button>
+      <input type="text" id="search" placeholder="Search asset or tag…" aria-label="Search">
+    </div>
+    <div class="grid" id="grid" aria-live="polite"></div>
+  </main>
+  <footer class="site-footer" id="site-footer"></footer>
+  <script type="module" src="/js/layout.js"></script>
+  <script type="module" src="/js/gallery.js"></script>
+</body>
+</html>
