@@ -1,0 +1,43 @@
+# Render Blueprint: one web service with a persistent disk for the database and uploaded images.
+# Persistent disks need a paid instance type. Secrets marked "sync: false" are asked for in the Render dashboard.
+services:
+  - type: web
+    name: apex-wave-capital
+    runtime: node
+    plan: starter
+    buildCommand: npm ci --omit=dev
+    startCommand: node server.js
+    healthCheckPath: /healthz
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: TRUST_PROXY
+        value: "1"
+      - key: DATA_DIR
+        value: /var/data
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: PUBLIC_URL
+        sync: false
+      - key: AGENT_PROVIDER
+        value: mock
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PRICE_ID
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_AUTOMATIC_TAX
+        value: "0"
+      - key: BRIEFING_AUTO
+        value: "0"
+      - key: BRIEFING_NEWS
+        value: none

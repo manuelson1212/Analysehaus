@@ -1,7 +1,8 @@
 // Browser-only stand-in for server.js, used by the static demo build (npm run demo:build).
 // Data lives in localStorage (memory fallback). The agent is the same mock provider as on the server.
-import { generate as mock, generatePromo as mockPromo } from '../lib/agent/mock.js';
+import { generate as mock, generatePromo as mockPromo, generateBriefing as mockBriefing } from '../lib/agent/mock.js';
 import { computeStats } from '../lib/depot.js';
+import { accessFor, redactAnalysis, redactPosition } from '../lib/access.js';
 import { finalize } from '../lib/agent/index.js';
 
 window.__DEMO__ = true;
@@ -26,6 +27,11 @@ const session = {
   get: () => { try { if (sessionStorage.getItem('ah-admin') === '1') return true; } catch { /* blocked */ } return adminFlag; },
   set: (v) => { adminFlag = v; try { sessionStorage.setItem('ah-admin', v ? '1' : '0'); } catch { /* blocked */ } },
 };
+
+let userId = null; // logged-in member (memory plus sessionStorage)
+try { userId = Number(sessionStorage.getItem('ah-user')) || null; } catch { /* blocked */ }
+const setUser = (id) => { userId = id; try { id ? sessionStorage.setItem('ah-user', String(id)) : sessionStorage.removeItem('ah-user'); } catch { /* blocked */ } };
+const sha = async (t) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`apex-demo:${t}`)))].map((b) => b.toString(16).padStart(2, '0')).join('');
 
 /* ---------- Seed data: charts are drawn on canvas so the demo needs no image files ---------- */
 function rng(seed) { let s = seed; return () => ((s = (s * 16807) % 2147483647) / 2147483647); }
@@ -111,7 +117,7 @@ function seedState() {
     P('SOL/USD', 'Crypto', 'long', 165, 170, 158, 190, 168, 158, 'stopped', 20, 16),
   ].map((p, i) => ({ ...p, id: i + 1, created_at: new Date().toISOString() }));
   const free_until = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10);
-  return { analyses, packs: {}, nextId: 4, messages: [], nextMsg: 1, positions, nextPos: positions.length + 1, config: { free_until, price: 29 }, promo: null };
+  return { analyses, packs: {}, nextId: 4, messages: [], nextMsg: 1, positions, nextPos: positions.length + 1, config: { free_until, price: 29 }, promo: null, briefings: [], nextBr: 1, users: [], nextUser: 1, legal: { imprint: '', privacy: '', terms: '' } };
 }
 
 const ready = (async () => { if (!store.read()) store.write(seedState()); })();
@@ -154,18 +160,22 @@ function parsePos(b) {
     result_pct: numOrNull(b.result_pct, 'Result'), status, opened_at: t(b.opened_at, 10) || null, closed_at: t(b.closed_at, 10) || null,
     note: t(b.note, 1000), evidence_url: url || null, analysis_id: b.analysis_id === '' || b.analysis_id == null ? null : Number(b.analysis_id) };
 }
+const curUser = (st) => (userId ? (st.users || []).find((u) => u.id === userId) || null : null);
+const accessNow = (st) => accessFor({ user: curUser(st), admin: session.get(), config: cfg(st) });
+const userView = (u) => u && { email: u.email, comped: !!u.comped, sub_status: u.sub_status || null, sub_period_end: null, has_customer: false, created_at: u.created_at };
+const meOf = (st) => ({ user: userView(curUser(st)), access: accessNow(st), config: cfg(st), payments_enabled: false });
 const byDate = (a, b) => (b.analysis_date.localeCompare(a.analysis_date)) || b.id - a.id;
 
 async function route(method, path, body) {
   await ready;
   const st = store.read();
   const now = () => new Date().toISOString();
-  if (method === 'GET' && path === '/api/analyses') return st.analyses.filter((a) => a.status === 'published').sort(byDate);
+  if (method === 'GET' && path === '/api/analyses') { const ac = accessNow(st); return st.analyses.filter((a) => a.status === 'published').sort(byDate).map((a) => redactAnalysis(a, ac)); }
   let m = /^\/api\/analyses\/(\d+)$/.exec(path);
   if (m && method === 'GET') {
     const a = st.analyses.find((x) => x.id === +m[1]);
     if (!a || (a.status !== 'published' && !session.get())) throw new Err(404, 'Not found');
-    return a;
+    return redactAnalysis(a, accessNow(st));
   }
   if (method === 'POST' && path === '/api/contact') {
     const t = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
@@ -178,7 +188,30 @@ async function route(method, path, body) {
     store.write(st); return { ok: true };
   }
   if (method === 'GET' && path === '/api/config') return cfg(st);
-  if (method === 'GET' && path === '/api/depot') return { positions: sortPos(st.positions), stats: computeStats(st.positions) };
+  if (method === 'GET' && path === '/api/depot') { const ac = accessNow(st); return { positions: sortPos(st.positions).map((p) => redactPosition(p, ac)), stats: computeStats(st.positions), locked: !ac.active }; }
+  if (method === 'GET' && path === '/api/legal') return st.legal || { imprint: '', privacy: '', terms: '' };
+  if (method === 'GET' && path === '/api/account/me') return meOf(st);
+  if (method === 'POST' && path === '/api/account/register') {
+    const email = String(body.email || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) throw new Err(400, 'Please enter a valid email address');
+    if (String(body.password || '').length < 10) throw new Err(400, 'Password must have at least 10 characters');
+    if (body.accept_terms !== true) throw new Err(400, 'Please accept the Terms and the Privacy Policy');
+    st.users ||= []; st.nextUser ||= 1;
+    if (st.users.some((u) => u.email === email)) throw new Err(409, 'An account with this email already exists. Please log in.');
+    const u = { id: st.nextUser++, email, pw: await sha(body.password), comped: false, created_at: now() };
+    st.users.push(u); store.write(st); setUser(u.id); return meOf(st);
+  }
+  if (method === 'POST' && path === '/api/account/login') {
+    const u = (st.users || []).find((x) => x.email === String(body.email || '').trim().toLowerCase());
+    if (!u || u.pw !== await sha(body.password || '')) throw new Err(401, 'Wrong email or password');
+    setUser(u.id); return meOf(st);
+  }
+  if (method === 'POST' && path === '/api/account/logout') { setUser(null); return { ok: true }; }
+  if (path.startsWith('/api/account/')) {
+    if (!curUser(st)) throw new Err(401, 'Please log in');
+    if (method === 'POST') throw new Err(503, 'Payments are not set up in the online preview.');
+    if (method === 'DELETE') { st.users = st.users.filter((u) => u.id !== userId); store.write(st); setUser(null); return { ok: true }; }
+  }
   if (method === 'POST' && path === '/api/signup') {
     const email = typeof body.email === 'string' ? body.email.trim().slice(0, 120) : '';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) throw new Err(400, 'Please enter a valid email address');
@@ -197,13 +230,42 @@ async function route(method, path, body) {
 
   if (method === 'GET' && path === '/api/admin/analyses') return [...st.analyses].sort(byDate);
   if (method === 'GET' && path === '/api/admin/messages') return st.messages || [];
+  if (method === 'GET' && path === '/api/admin/users') return (st.users || []).map((u) => ({ id: u.id, email: u.email, comped: !!u.comped, sub_status: null, sub_period_end: null, created_at: u.created_at, access: u.comped ? 'comped' : 'none' }));
+  let um = /^\/api\/admin\/users\/(\d+)$/.exec(path);
+  if (um && method === 'PUT') { const u = (st.users || []).find((x) => x.id === +um[1]); if (!u) throw new Err(404, 'Not found'); u.comped = !!body.comped; store.write(st); return { ok: true }; }
+  if (method === 'GET' && path === '/api/admin/legal') return st.legal || { imprint: '', privacy: '', terms: '' };
+  if (method === 'PUT' && path === '/api/admin/legal') { st.legal = { imprint: String(body.imprint || ''), privacy: String(body.privacy || ''), terms: String(body.terms || '') }; store.write(st); return st.legal; }
   if (method === 'PUT' && path === '/api/admin/config') {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(body.free_until || '')) throw new Err(400, 'Free access end date is required');
     const price = Number(body.price);
     if (!Number.isFinite(price) || price < 0) throw new Err(400, 'Price must be 0 or more');
     st.config = { free_until: body.free_until, price }; store.write(st); return cfg(st);
   }
-  if (method === 'GET' && path === '/api/admin/agent-status') return { provider: 'mock', model: null, key_configured: false, fallback: true };
+  if (method === 'GET' && path === '/api/admin/agent-status') return { provider: 'mock', model: null, key_configured: false, fallback: true, briefing_auto: false, briefing_news: 'none' };
+  st.briefings ||= []; st.nextBr ||= 1;
+  const runBriefing = async () => {
+    const day = new Date().toISOString().slice(0, 10), since = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10), stats = computeStats(st.positions), c = cfg(st);
+    const facts = { date: day, free_days_left: c.days_left, analyses: st.analyses.filter((a) => a.status === 'published' && a.analysis_date >= since).slice(0, 6).map((a) => ({ asset: a.asset, timeframe: a.timeframe, analysis_date: a.analysis_date, wave_count: a.wave_count, scenario_primary: a.scenario_primary })),
+      depot: { hit_rate: stats.closed ? stats.hit_rate : null, hits: stats.hits, closed: stats.closed, open: stats.open, watching: stats.watching, simulated: true } };
+    const raw = await mockBriefing({ facts });
+    const rec = { day, briefing: raw.briefing, sources: [], pack: finalize({ ...raw, provider: 'mock' }), status: 'draft', created_at: now() };
+    const i = st.briefings.findIndex((b) => b.day === day);
+    if (i >= 0) { rec.id = st.briefings[i].id; st.briefings[i] = rec; } else { rec.id = st.nextBr++; st.briefings.unshift(rec); }
+    store.write(st); return rec;
+  };
+  if (method === 'GET' && path === '/api/admin/briefings') return st.briefings.map(({ pack, ...b }) => b);
+  if (method === 'POST' && path === '/api/admin/briefings') { const r = await runBriefing(); return { id: r.id, day: r.day }; }
+  let bm = /^\/api\/admin\/briefings\/(\d+)(\/pack)?$/.exec(path);
+  if (bm) {
+    const b = st.briefings.find((x) => x.id === +bm[1]);
+    if (!b) throw new Err(404, 'Not found');
+    if (!bm[2]) { if (method === 'GET') return b; if (method === 'DELETE') { st.briefings = st.briefings.filter((x) => x.id !== b.id); store.write(st); return { ok: true }; } }
+    else {
+      if (method === 'GET') return { content: b.pack, status: b.status };
+      if (method === 'POST') { const r = await runBriefing(); return { content: r.pack, status: r.status }; }
+      if (method === 'PUT') { b.pack = finalize({ ...body.content, provider: b.pack.provider, chart_notes: b.pack.chart_notes }); b.status = body.status === 'approved' ? 'approved' : 'draft'; store.write(st); return { content: b.pack, status: b.status }; }
+    }
+  }
   if (method === 'POST' && path === '/api/admin/agent-test') return { ok: true, provider: 'mock', message: 'Preview mode: the mock agent is active. No AI call was made. On your own server, set AGENT_PROVIDER=claude to use the real agent.' };
   if (path === '/api/admin/promo') {
     if (method === 'GET') return st.promo ?? null;

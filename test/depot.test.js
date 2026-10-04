@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { computeStats, resultPct } from '../lib/depot.js';
-import { parsePosition, parseSettings, parseSignup } from '../lib/validate.js';
+import { parsePosition, parseSettings } from '../lib/validate.js';
 
 const base = { market: 'Crypto', asset: 'BTC/USD' };
 
@@ -38,10 +38,8 @@ test('position validation rejects bad zones, numbers and unsafe proof links', ()
   assert.deepEqual([ok.buy_low, ok.buy_high, ok.stop, ok.status, ok.direction], [61000, 62400, null, 'hit', 'long']);
 });
 
-test('settings and signup validation', () => {
+test('settings validation', () => {
   assert.throws(() => parseSettings({ free_until: '', price: 29 }), /required/);
   assert.throws(() => parseSettings({ free_until: '2026-12-31', price: -1 }), /0 or more/);
   assert.deepEqual(parseSettings({ free_until: '2026-12-31', price: '39' }), { free_until: '2026-12-31', price: 39 });
-  assert.throws(() => parseSignup({ email: 'nope' }), /valid email/);
-  assert.equal(parseSignup({ email: 'a@b.co' }).topic, 'Free access signup');
 });

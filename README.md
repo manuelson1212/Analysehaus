@@ -67,7 +67,7 @@ password in the preview: `demo`. The ZIP download is turned off there; everythin
 
 ## Pages
 
-`/` home · `/analyses` (Research) · `/analysis?id=…` · `/depot` (live demo depot) · `/pricing` · `/support` (Contact) · `/admin`.
+`/` home · `/analyses` (Research) · `/analysis?id=…` · `/depot` (live demo depot) · `/pricing` · `/account` (login, membership, billing) · `/support` (Contact) · `/imprint` `/privacy` `/terms` · `/admin`.
 
 ### Live demo depot and hit rate
 
@@ -75,6 +75,20 @@ Positions are added in the admin **Depot** tab: buy zone, stop, target, status (
 entry and exit price, and proof (screenshot and/or link). The public hit rate is **calculated from these records**:
 closed calls that reached the target before the stop, divided by all closed calls, always shown with the sample size
 ("8 of 10 closed calls"). With no closed calls the site shows "–". The depot is labelled as a simulation without real money.
+
+### Membership paywall
+
+During the free period everyone sees everything. Afterwards, without an active membership, visitors still see each analysis's
+chart, wave count and primary scenario and every closed depot call with its proof, but not alternates, levels, the written
+analysis or the zones of running positions. Accounts, Stripe checkout and the billing portal are in `lib/billing.js`;
+access rules in `lib/access.js`. See `DEPLOY.md` for the Stripe setup. Payments work only when `STRIPE_SECRET_KEY` and
+`STRIPE_PRICE_ID` are set.
+
+### Daily briefing and motion video
+
+Admin **Briefing**: one draft per day (09:00 Berlin when `BRIEFING_AUTO=1`; news with sources when `BRIEFING_NEWS=websearch`).
+Its social pack opens in the **Content studio**, where **Render motion video** records a 9:16 animated video in the browser
+(H.264 MP4 in Chrome and Safari, otherwise WebM with a conversion hint). Nothing is posted automatically.
 
 ### Free access period
 
@@ -90,5 +104,4 @@ Admin **AI agent** tab: status, connection test and a step-by-step guide. In the
 only numbers from your own records. Export the ZIP, record the video following the scene list and post it manually.
 Direct posting to TikTok and Instagram is not built (it requires platform approval).
 
-Pricing is example content. Before going public, add the legal pages your jurisdiction requires (for Germany:
-Impressum and Datenschutzerklärung).
+The legal pages are filled in the admin **Settings** tab (Imprint, Privacy, Terms). Pricing text is example content until you set the price.

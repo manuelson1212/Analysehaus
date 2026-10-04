@@ -2,6 +2,7 @@ import { h, api, imgUrl, detailUrl } from './dom.js';
 import { STATUS } from './depot-ui.js';
 import { fileToWebp, loadImage, renderCarouselSlide, renderTikTokCover, canvasToBlob } from './imaging.js';
 import { makeZip } from './zip.js';
+import { renderMotionVideo, planTimeline, supportedMime } from './motion.js';
 
 const app = document.getElementById('app');
 let current = { tab: 'new', editId: null, studioId: null };
@@ -35,7 +36,7 @@ async function logout() {
 function shell(content) {
   const tab = (id, label) => h('button', { class: `tab ${current.tab === id ? 'on' : ''}`, onclick: () => { current = { tab: id, editId: null, positionId: null, studioId: id === 'studio' ? current.studioId : null }; render(); } }, label);
   app.replaceChildren(
-    h('div', { class: 'tabs', role: 'tablist' }, tab('new', current.editId ? 'Edit analysis' : 'New analysis'), tab('list', 'Analyses'), tab('depot', 'Depot'), tab('studio', 'Content studio'), tab('agent', 'AI agent'), tab('inbox', 'Inbox'), tab('settings', 'Settings'),
+    h('div', { class: 'tabs', role: 'tablist' }, tab('new', current.editId ? 'Edit analysis' : 'New analysis'), tab('list', 'Analyses'), tab('depot', 'Depot'), tab('briefing', 'Briefing'), tab('studio', 'Content studio'), tab('agent', 'AI agent'), tab('inbox', 'Inbox'), tab('users', 'Members'), tab('settings', 'Settings'),
       h('span', { class: 'tabs-spacer' }), h('button', { class: 'tab', onclick: logout }, 'Log out')),
     content);
 }
@@ -45,7 +46,9 @@ function render() {
   if (current.tab === 'list') return renderList();
   if (current.tab === 'inbox') return renderInbox();
   if (current.tab === 'depot') return renderDepot();
+  if (current.tab === 'briefing') return renderBriefing();
   if (current.tab === 'agent') return renderAgent();
+  if (current.tab === 'users') return renderUsers();
   if (current.tab === 'settings') return renderSettings();
   return renderStudio();
 }
@@ -233,6 +236,41 @@ async function renderDepot(flash) {
     positions.length ? h('div', { class: 'scroll-x' }, h('table', { class: 'table' }, h('thead', {}, h('tr', {}, ['Position', 'Status', 'Proof', ''].map((t) => h('th', {}, t)))), h('tbody', {}, rows))) : h('div', { class: 'empty' }, 'No positions yet.')));
 }
 
+/* ---------- Daily briefing ---------- */
+async function renderBriefing(flash) {
+  shell(h('p', { class: 'muted' }, 'Loading…'));
+  const [list, st] = await Promise.all([api('/api/admin/briefings'), api('/api/admin/agent-status')]);
+  const msg = h('div', {}, flash && notice('ok', flash));
+  const gen = h('button', { class: 'btn', onclick: async () => {
+    gen.disabled = true; gen.textContent = 'Writing the briefing…';
+    try { await api('/api/admin/briefings', { method: 'POST', body: {} }); renderBriefing('Briefing created. Review it, then open its social pack in the Content studio.'); }
+    catch (err) { msg.replaceChildren(notice('err', err.message)); gen.disabled = false; gen.textContent = 'Create today\u2019s briefing now'; }
+  } }, 'Create today\u2019s briefing now');
+  const head = current.briefingId && list.find((b) => b.id === current.briefingId) || list[0];
+  const pick = head && await api(`/api/admin/briefings/${head.id}`); // full record incl. social pack
+  const view = pick && h('section', { class: 'block' },
+    h('div', { class: 'row' }, h('h2', {}, pick.briefing.headline || `Briefing ${pick.day}`), h('span', { class: `badge ${pick.status === 'approved' ? 'pub' : ''}` }, pick.status), h('span', { class: 'label' }, pick.day)),
+    h('h3', {}, 'Macro and markets'),
+    pick.briefing.macro.length ? h('ul', { class: 'plain' }, pick.briefing.macro.map((m) => h('li', {}, h('b', {}, `${m.title}. `), m.text)))
+      : h('p', { class: 'muted' }, 'No news in this briefing. Set BRIEFING_NEWS=websearch with the real agent to include macro news with sources.'),
+    pick.sources.length ? h('p', { class: 'fine' }, 'Sources: ', pick.sources.map((s, i) => [i ? ' · ' : '', h('a', { href: s.url, target: '_blank', rel: 'noopener noreferrer' }, s.title)])) : null,
+    h('h3', {}, 'Analyses'), pick.briefing.analyses.length ? h('ul', { class: 'plain' }, pick.briefing.analyses.map((a) => h('li', {}, h('b', {}, `${a.asset}: `), a.text))) : h('p', { class: 'muted' }, 'No analyses from the last 7 days.'),
+    h('h3', {}, 'Depot'), h('p', {}, pick.briefing.depot_note),
+    pick.pack.chart_notes && h('p', { class: 'fine' }, `Internal note: ${pick.pack.chart_notes}`),
+    h('div', { class: 'row' }, h('button', { class: 'btn', onclick: () => { current = { tab: 'studio', editId: null, positionId: null, studioId: `b${pick.id}` }; render(); } }, 'Open social pack and motion video'),
+      h('button', { class: 'btn danger', onclick: async () => { await api(`/api/admin/briefings/${pick.id}`, { method: 'DELETE' }); current.briefingId = null; renderBriefing('Deleted.'); } }, 'Delete')));
+  shell(h('div', { class: 'studio' },
+    h('div', { class: 'block' }, h('h2', {}, 'Daily briefing'),
+      h('div', { class: 'kv-row' }, h('span', {}, 'Automatic at 09:00 Berlin time ', h('span', { class: `badge ${st.briefing_auto ? 'pub' : ''}` }, st.briefing_auto ? 'on' : 'off')),
+        h('span', {}, 'News source ', h('span', { class: 'badge' }, st.briefing_news === 'websearch' ? 'web search' : 'none')), h('span', {}, 'Agent ', h('span', { class: 'badge' }, st.provider))),
+      h('p', { class: 'muted' }, 'The briefing summarises your latest analyses (public fields only), the depot and, with web search on, the day\u2019s macro news with sources. It is always a draft: nothing is posted automatically, and you check the facts before you publish.'),
+      st.briefing_auto ? null : h('p', { class: 'fine' }, 'To run it every morning on your server, set BRIEFING_AUTO=1 and restart.'),
+      h('div', { class: 'row' }, gen), msg),
+    list.length > 1 && h('div', { class: 'field' }, h('label', { class: 'label', for: 'b-pick' }, 'Earlier briefings'),
+      h('select', { id: 'b-pick', onchange: (e) => { current.briefingId = Number(e.target.value); renderBriefing(); } }, list.map((b) => h('option', { value: b.id, selected: b.id === pick.id }, `${b.day} · ${b.status}`)))),
+    view || h('div', { class: 'empty' }, 'No briefing yet.')));
+}
+
 /* ---------- AI agent ---------- */
 async function renderAgent() {
   shell(h('p', { class: 'muted' }, 'Loading…'));
@@ -267,22 +305,46 @@ async function renderAgent() {
 }
 
 /* ---------- Settings ---------- */
+async function renderUsers(flash) {
+  shell(h('p', { class: 'muted' }, 'Loading…'));
+  const list = await api('/api/admin/users');
+  const ACCESS = { member: 'paying member', comped: 'free access granted', none: 'no access' };
+  const rows = list.map((u) => h('tr', {},
+    h('td', {}, u.email), h('td', { class: 'muted' }, u.created_at.slice(0, 10)),
+    h('td', {}, h('span', { class: `badge ${u.access === 'none' ? '' : 'pub'}` }, ACCESS[u.access] || u.access), u.sub_status && h('span', { class: 'muted' }, ` ${u.sub_status}`)),
+    h('td', {}, h('button', { class: 'btn sm ghost', onclick: async () => { await api(`/api/admin/users/${u.id}`, { method: 'PUT', body: { comped: !u.comped } }); renderUsers(u.comped ? 'Free access removed.' : 'Free access granted.'); } }, u.comped ? 'Remove free access' : 'Grant free access'))));
+  shell(h('div', { class: 'studio' }, flash && notice('ok', flash),
+    h('p', { class: 'muted' }, 'Registered members. Paying members come from Stripe; you can also grant free access, for example for testers or partners.'),
+    list.length ? h('div', { class: 'scroll-x' }, h('table', { class: 'table' }, h('thead', {}, h('tr', {}, ['Email', 'Joined', 'Access', ''].map((t) => h('th', {}, t)))), h('tbody', {}, rows))) : h('div', { class: 'empty' }, 'No members yet.')));
+}
+
 async function renderSettings(flash) {
   shell(h('p', { class: 'muted' }, 'Loading…'));
-  const c = await api('/api/config');
+  const [c, legal] = await Promise.all([api('/api/config'), api('/api/admin/legal')]);
   const until = h('input', { type: 'date', id: 's-until', value: c.free_until });
   const price = h('input', { type: 'text', id: 's-price', inputmode: 'decimal', value: c.price });
   const msg = h('div', {}, flash && notice('ok', flash));
-  shell(h('form', { class: 'panel form', onsubmit: async (e) => {
-    e.preventDefault();
-    try { await api('/api/admin/config', { method: 'PUT', body: { free_until: until.value, price: toNum(price.value) } }); renderSettings('Saved. The website now shows the new dates and price.'); }
-    catch (err) { msg.replaceChildren(notice('err', err.message)); }
-  } }, h('h2', {}, 'Free access and price'),
-  h('p', { class: 'muted' }, `Free access currently ends on ${c.free_until} (${c.days_left} days left). The countdown on the website follows this date.`),
-  h('div', { class: 'two' }, h('div', { class: 'field' }, h('label', { class: 'label', for: 's-until' }, 'Free access ends on'), until),
-    h('div', { class: 'field' }, h('label', { class: 'label', for: 's-price' }, 'Price per month after the free period (€)'), price)),
-  h('p', { class: 'fine' }, 'This controls the texts and the countdown. It does not block content or take payments yet.'),
-  msg, h('div', { class: 'row' }, h('button', { class: 'btn', type: 'submit' }, 'Save'))));
+  const ta = (k, label) => { const el = h('textarea', { id: `l-${k}`, rows: 8 }, legal[k] || ''); return [h('div', { class: 'field' }, h('label', { class: 'label', for: `l-${k}` }, label), el), el]; };
+  const [fImp, tImp] = ta('imprint', 'Imprint (Impressum)'), [fPriv, tPriv] = ta('privacy', 'Privacy Policy (Datenschutzerklärung)'), [fTerms, tTerms] = ta('terms', 'Terms and cancellation policy (AGB, Widerruf)');
+  const msg2 = h('div');
+  shell(h('div', { class: 'studio' },
+    h('form', { class: 'panel form', onsubmit: async (e) => {
+      e.preventDefault();
+      try { await api('/api/admin/config', { method: 'PUT', body: { free_until: until.value, price: toNum(price.value) } }); renderSettings('Saved. The website now shows the new dates and price.'); }
+      catch (err) { msg.replaceChildren(notice('err', err.message)); }
+    } }, h('h2', {}, 'Free access and price'),
+    h('p', { class: 'muted' }, `Free access currently ends on ${c.free_until} (${c.days_left} days left). Until then every visitor sees everything. Afterwards the member details need a membership.`),
+    h('div', { class: 'two' }, h('div', { class: 'field' }, h('label', { class: 'label', for: 's-until' }, 'Free access ends on'), until),
+      h('div', { class: 'field' }, h('label', { class: 'label', for: 's-price' }, 'Price shown on the site (€ per month)'), price)),
+    h('p', { class: 'fine' }, 'The real price is the one you set for the product in Stripe. Keep both the same.'),
+    msg, h('div', { class: 'row' }, h('button', { class: 'btn', type: 'submit' }, 'Save'))),
+    h('form', { class: 'panel form', onsubmit: async (e) => {
+      e.preventDefault();
+      try { await api('/api/admin/legal', { method: 'PUT', body: { imprint: tImp.value, privacy: tPriv.value, terms: tTerms.value } }); msg2.replaceChildren(notice('ok', 'Saved. The pages are live at /imprint, /privacy and /terms.')); }
+      catch (err) { msg2.replaceChildren(notice('err', err.message)); }
+    } }, h('h2', {}, 'Legal pages'),
+    h('p', { class: 'muted' }, 'Paste the texts from your lawyer or a legal text generator. They are shown as plain text, with paragraphs separated by a blank line. A commercial site in Germany needs an imprint and a privacy policy, and paid memberships need terms with a cancellation policy.'),
+    fImp, fPriv, fTerms, msg2, h('div', { class: 'row' }, h('button', { class: 'btn', type: 'submit' }, 'Save legal pages')))));
 }
 
 /* ---------- Inbox ---------- */
@@ -302,16 +364,17 @@ const PROMO = { id: 'promo', asset: 'Apex Wave Capital', market: 'Free access', 
 
 async function renderStudio() {
   shell(h('p', { class: 'muted' }, 'Loading…'));
-  const items = await api('/api/admin/analyses');
+  const [items, brs] = await Promise.all([api('/api/admin/analyses'), api('/api/admin/briefings')]);
   const sel = h('select', { id: 'pick', 'aria-label': 'Content source' },
     h('option', { value: 'promo', selected: current.studioId === 'promo' }, '★ Website promo (ad for the whole site)'),
+    brs.map((b) => h('option', { value: `b${b.id}`, selected: current.studioId === `b${b.id}` }, `☀ Daily briefing · ${b.day}`)),
     items.map((a) => h('option', { value: a.id, selected: a.id === current.studioId }, `${a.asset} · ${a.timeframe} · ${a.analysis_date}`)));
   const stage = h('div', { class: 'studio' });
   const load = async () => {
-    const isPromo = sel.value === 'promo';
-    current.studioId = isPromo ? 'promo' : Number(sel.value);
-    const analysis = isPromo ? PROMO : items.find((a) => a.id === current.studioId);
-    const packUrl = isPromo ? '/api/admin/promo' : `/api/admin/analyses/${analysis.id}/pack`;
+    const isPromo = sel.value === 'promo', brief = /^b\d+$/.test(sel.value) ? brs.find((b) => `b${b.id}` === sel.value) : null;
+    current.studioId = isPromo || brief ? sel.value : Number(sel.value);
+    const analysis = isPromo ? PROMO : brief ? { id: 'briefing', asset: 'Apex Wave Capital', market: 'Daily briefing', timeframe: brief.day, analysis_date: brief.day } : items.find((a) => a.id === current.studioId);
+    const packUrl = isPromo ? '/api/admin/promo' : brief ? `/api/admin/briefings/${brief.id}/pack` : `/api/admin/analyses/${analysis.id}/pack`;
     const pack = await api(packUrl);
     stage.replaceChildren(await studioView(analysis, pack, load, packUrl));
   };
@@ -378,6 +441,31 @@ async function studioView(analysis, pack, reload, packUrl) {
     previews.replaceChildren(...canvases);
   } }, 'Save & preview visuals');
 
+  // Motion video: rendered in this browser tab, recorded in real time.
+  const motionOut = h('div', { class: 'motion-out' });
+  const motionBtn = h('button', { class: 'btn', type: 'button', onclick: async () => {
+    if (!supportedMime()) return motionOut.replaceChildren(notice('err', 'This browser cannot record video. Use a current version of Chrome, Edge or Safari.'));
+    const content = collect();
+    if (!content.tiktok.scenes.length) return motionOut.replaceChildren(notice('err', 'Generate the script first: the video follows the TikTok scenes.'));
+    motionBtn.disabled = true;
+    const bar = h('div', { class: 'progress' }, h('span', { id: 'mp' }));
+    const label = h('p', { class: 'muted' }, `Rendering in real time (about ${Math.round(planTimeline(content).total)} seconds). Keep this tab open and in front.`);
+    motionOut.replaceChildren(label, bar);
+    try {
+      if (chartImg === null && analysis.image) chartImg = await loadImage(imgUrl(analysis.image));
+      const r = await renderMotionVideo({ pack: content, img: chartImg, meta: analysis.market === 'Crypto' || analysis.market === 'Stocks' ? `${analysis.asset} · ${analysis.timeframe}` : analysis.analysis_date,
+        onProgress: (p) => { const el = bar.firstChild; if (el) el.style.width = `${Math.round(p * 100)}%`; } });
+      const url = URL.createObjectURL(r.blob), ext = r.mime.includes('mp4') ? 'mp4' : 'webm';
+      motionOut.replaceChildren(
+        h('video', { class: 'motion-video', src: url, controls: true, playsinline: true }),
+        h('div', { class: 'row' }, window.__DEMO__ ? h('span', { class: 'muted' }, 'Downloads are turned off in this online preview. On your own site the download button appears here.')
+          : h('a', { class: 'btn', href: url, download: `apex-wave-${analysis.asset.replace(/\W+/g, '-')}-${new Date().toISOString().slice(0, 10)}.${ext}` }, `Download ${ext.toUpperCase()}`),
+          h('span', { class: 'muted' }, `${Math.round(r.duration)} seconds, 1080×1920, no audio.`)),
+        ext === 'webm' ? h('p', { class: 'fine' }, 'This browser recorded WebM. TikTok and Instagram want H.264 MP4. Render in Chrome or Safari on a computer to get MP4 directly, or convert the file in CapCut or with: ffmpeg -i input.webm -c:v libx264 -pix_fmt yuv420p -movflags +faststart output.mp4') : null);
+    } catch (err) { motionOut.replaceChildren(notice('err', `Rendering failed: ${err.message}`)); }
+    motionBtn.disabled = false;
+  } }, 'Render motion video');
+
   const exportBtn = h('button', { class: 'btn', disabled: pack.status !== 'approved', onclick: async () => {
     const saved = await save('approved'); if (!saved) return;
     if (window.__DEMO__) { msg.replaceChildren(notice('ok', 'Approved. ZIP download is turned off in this online preview. Use "Save & preview visuals" to see every slide. The full app exports the ZIP.')); return; }
@@ -419,6 +507,7 @@ async function studioView(analysis, pack, reload, packUrl) {
       h('div', { class: 'field' }, h('span', { class: 'label' }, 'Caption (disclaimer is added automatically)'), igCaption),
       h('div', { class: 'field' }, h('span', { class: 'label' }, 'Hashtags'), igTags)),
     h('section', { class: 'block' }, h('h2', {}, 'Visuals'), previews),
+    h('section', { class: 'block' }, h('h2', {}, 'Motion video (9:16)'), h('p', { class: 'muted' }, 'Animated wave background, your on-screen texts, the voice-over as subtitles and the disclaimer. Add your voice-over or music in the platform editor.'), h('div', { class: 'row' }, motionBtn), motionOut),
     msg,
     h('div', { class: 'row' }, h('button', { class: 'btn ghost', onclick: () => save('draft') }, 'Save draft'), preview,
       h('button', { class: 'btn', onclick: async () => { const s = await save('approved'); if (s) exportBtn.disabled = false; } }, 'Approve'), exportBtn));

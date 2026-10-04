@@ -2,10 +2,8 @@ import { h, api } from './dom.js';
 import { mountAtmosphere } from './atmosphere.js';
 import { card } from './cards.js';
 import { depotTable } from './depot-ui.js';
-import { bindSignup } from './signup.js';
 
 mountAtmosphere(document.getElementById('atmo'));
-bindSignup();
 const $ = (id) => document.getElementById(id);
 
 api('/api/config').then((c) => {

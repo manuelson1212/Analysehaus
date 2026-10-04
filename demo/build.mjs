@@ -17,7 +17,7 @@ const bundle = async (contents) => (await build({
 // route name -> [html file, page script or null]
 const pages = {
   home: ['public/index.html', 'home'], analyses: ['public/analyses.html', 'gallery'], detail: ['public/analysis.html', 'detail'],
-  depot: ['public/depot.html', 'depot'], pricing: ['public/pricing.html', 'pricing'], support: ['public/support.html', 'support'], admin: ['public/admin.html', 'admin'],
+  depot: ['public/depot.html', 'depot'], account: ['public/account.html', 'account'], legal: ['public/legal.html', 'legal'], pricing: ['public/pricing.html', 'pricing'], support: ['public/support.html', 'support'], admin: ['public/admin.html', 'admin'],
 };
 const templates = {}, code = {};
 for (const [name, [html, script]] of Object.entries(pages)) {
@@ -32,7 +32,7 @@ const PAGES = {${Object.entries(code).map(([k, v]) => `${k}: () => {${v}}`).join
 const view = document.getElementById('view');
 function route() {
   const hash = location.hash.slice(1);
-  const name = hash.startsWith('analysis') ? 'detail' : (T[hash] ? hash : 'home');
+  const name = hash.startsWith('analysis') ? 'detail' : ['imprint', 'privacy', 'terms'].includes(hash) ? 'legal' : (T[hash] && hash !== 'legal' && hash !== 'detail' ? hash : 'home');
   view.innerHTML = T[name];
   const L = window.__layout;
   L.setActive(name); L.bindLinks(view); window.scrollTo(0, 0);

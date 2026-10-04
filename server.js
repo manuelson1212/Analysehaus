@@ -2,14 +2,19 @@ import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { join, extname, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { analyses, packs, messages, positions, kv, UPLOAD_DIR } from './lib/db.js';
+import { gzipSync } from 'node:zlib';
+import { db, analyses, packs, messages, positions, kv, users, briefings, UPLOAD_DIR } from './lib/db.js';
+import { berlinParts, startScheduler } from './lib/scheduler.js';
 import { computeStats } from './lib/depot.js';
+import { accessFor, redactAnalysis, redactPosition } from './lib/access.js';
+import { hashPassword, verifyPassword } from './lib/passwords.js';
+import { paymentsEnabled, createCheckout, createPortal, verifyWebhook, applyEvent } from './lib/billing.js';
 import {
   ADMIN_PASSWORD, PASSWORD_GENERATED, checkPassword, makeToken, verifyToken,
-  parseCookies, sessionCookie, clearCookie, loginAllowed, recordLogin,
+  parseCookies, sessionCookie, clearCookie, loginAllowed, recordLogin, makeUserToken, userIdFromToken, userCookie, clearUserCookie,
 } from './lib/auth.js';
-import { HttpError, parseAnalysis, parseContact, parsePosition, parseSettings, parseSignup, saveImage, deleteImage } from './lib/validate.js';
-import { generatePack, generatePromoPack, finalize, testAgent, providerName } from './lib/agent/index.js';
+import { HttpError, parseAnalysis, parseContact, parsePosition, parseSettings, parseCredentials, parseLegal, saveImage, deleteImage } from './lib/validate.js';
+import { generatePack, generatePromoPack, generateBriefingRecord, finalize, testAgent, providerName } from './lib/agent/index.js';
 
 const PUBLIC_DIR = join(fileURLToPath(new URL('.', import.meta.url)), 'public');
 const PORT = Number(process.env.PORT || 3000);
@@ -49,12 +54,18 @@ async function readJson(req) {
   catch { throw new HttpError(400, 'Invalid JSON'); }
 }
 
+// Behind a hosting proxy the socket address is the proxy, so the real client IP comes from X-Forwarded-For.
+// Only trusted when TRUST_PROXY is set (the hosting config sets it); otherwise clients could spoof it.
+const clientIp = (req) => (process.env.TRUST_PROXY ? String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() : '') || req.socket.remoteAddress || 'unknown';
+const isHttps = (req) => req.headers['x-forwarded-proto'] === 'https';
+const publicUrl = (req) => (process.env.PUBLIC_URL || `${isHttps(req) ? 'https' : 'http'}://${req.headers.host}`).replace(/\/$/, '');
+
 const contactHits = new Map();
-function rateLimit(ip) {
-  const now = Date.now();
-  const hits = (contactHits.get(ip) || []).filter((t) => now - t < 3600_000);
-  if (hits.length >= 5) throw new HttpError(429, 'Too many messages. Please try again later.');
-  contactHits.set(ip, [...hits, now]);
+function rateLimit(ip, bucket = 'msg', max = 5) {
+  const key = `${bucket}:${ip}`, now = Date.now();
+  const hits = (contactHits.get(key) || []).filter((t) => now - t < 3600_000);
+  if (hits.length >= max) throw new HttpError(429, 'Too many attempts. Please try again later.');
+  contactHits.set(key, [...hits, now]);
 }
 
 // Free access window: set once on first start (today + 30 days) and editable in the admin settings.
@@ -79,6 +90,22 @@ function promoFacts() {
   };
 }
 
+// Facts for the daily briefing: public fields only, so social posts never leak member-only details.
+function briefingFacts(day) {
+  const since = new Date(Date.parse(`${day}T00:00:00Z`) - 7 * 864e5).toISOString().slice(0, 10);
+  const { stats } = depotView(), cfg = getConfig();
+  return {
+    date: day, free_days_left: cfg.days_left,
+    analyses: analyses.list(true).filter((a) => a.analysis_date >= since).slice(0, 6).map((a) => ({ asset: a.asset, timeframe: a.timeframe, analysis_date: a.analysis_date, wave_count: a.wave_count, scenario_primary: a.scenario_primary })),
+    depot: { hit_rate: stats.closed ? stats.hit_rate : null, hits: stats.hits, closed: stats.closed, open: stats.open, watching: stats.watching, simulated: true },
+  };
+}
+
+async function runBriefing(day) {
+  const rec = await generateBriefingRecord(briefingFacts(day));
+  return briefings.save(day, rec, 'draft');
+}
+
 const promoGet = () => kv.get('promo_pack');
 function promoSave(content, status) {
   const row = { content, status, updated_at: new Date().toISOString() };
@@ -88,34 +115,59 @@ function promoSave(content, status) {
 const isAdmin = (req) => verifyToken(parseCookies(req.headers.cookie).ah_session);
 const publicView = ({ updated_at, ...a }) => a;
 
-async function serveFile(res, path, cache) {
+async function readRaw(req, limit = 1024 * 1024) {
+  const chunks = [];
+  let size = 0;
+  for await (const c of req) { size += c.length; if (size > limit) throw new HttpError(413, 'Request too large'); chunks.push(c); }
+  return Buffer.concat(chunks);
+}
+
+const currentUser = (req) => { const id = userIdFromToken(parseCookies(req.headers.cookie).ah_user); return id ? users.get(id) : null; };
+const accessOf = (req) => accessFor({ user: currentUser(req), admin: isAdmin(req), config: getConfig() });
+const userView = (u) => u && { email: u.email, comped: !!u.comped, sub_status: u.sub_status, sub_period_end: u.sub_period_end, has_customer: !!u.stripe_customer_id, created_at: u.created_at };
+const me = (req, user = currentUser(req)) => ({ user: userView(user), access: accessFor({ user, admin: isAdmin(req), config: getConfig() }), config: getConfig(), payments_enabled: paymentsEnabled() });
+const LEGAL_KEYS = ['imprint', 'privacy', 'terms'];
+const DUMMY_HASH = await hashPassword('dummy-password-for-timing');
+
+// Text assets are gzip-compressed once and kept in memory until the file changes.
+const COMPRESSIBLE = new Set(['.html', '.css', '.js', '.svg', '.json']);
+const gzCache = new Map();
+
+async function serveFile(req, res, path, cache, status = 200) {
   try {
     const st = await stat(path);
     if (!st.isFile()) throw new Error('not a file');
-    const data = await readFile(path);
-    send(res, 200, data, {
-      'Content-Type': MIME[extname(path)] || 'application/octet-stream',
-      'Cache-Control': cache,
-    });
+    const ext = extname(path);
+    const headers = { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': cache, Vary: 'Accept-Encoding' };
+    let body = await readFile(path);
+    if (COMPRESSIBLE.has(ext) && body.length > 1024 && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) {
+      const hit = gzCache.get(path);
+      if (hit?.mtime === st.mtimeMs) body = hit.data;
+      else { body = gzipSync(body, { level: 9 }); gzCache.set(path, { mtime: st.mtimeMs, data: body }); }
+      headers['Content-Encoding'] = 'gzip';
+    }
+    send(res, status, body, headers);
   } catch {
-    send(res, 404, 'Not found', { 'Content-Type': 'text/plain; charset=utf-8' });
+    if (status === 404) return send(res, 404, 'Not found', { 'Content-Type': 'text/plain; charset=utf-8' });
+    return serveFile(req, res, join(PUBLIC_DIR, '404.html'), 'no-cache', 404);
   }
 }
 
 async function api(req, res, url) {
   const path = url.pathname;
   const method = req.method;
-  const ip = req.socket.remoteAddress || 'unknown';
+  const ip = clientIp(req);
 
   // Public API
   if (method === 'GET' && path === '/api/analyses') {
-    return json(res, 200, analyses.list(true).map(publicView));
+    const access = accessOf(req);
+    return json(res, 200, analyses.list(true).map((a) => redactAnalysis(publicView(a), access)));
   }
   let m = /^\/api\/analyses\/(\d+)$/.exec(path);
   if (m && method === 'GET') {
     const a = analyses.get(Number(m[1]));
     if (!a || (a.status !== 'published' && !isAdmin(req))) throw new HttpError(404, 'Not found');
-    return json(res, 200, publicView(a));
+    return json(res, 200, redactAnalysis(publicView(a), accessOf(req)));
   }
 
   // Contact form (public, rate limited per IP: 5 messages per hour)
@@ -125,14 +177,60 @@ async function api(req, res, url) {
     messages.create(data);
     return json(res, 201, { ok: true });
   }
-  if (method === 'POST' && path === '/api/signup') {
-    const data = parseSignup(await readJson(req));
-    rateLimit(ip);
-    messages.create(data);
-    return json(res, 201, { ok: true });
-  }
   if (method === 'GET' && path === '/api/config') return json(res, 200, getConfig());
-  if (method === 'GET' && path === '/api/depot') return json(res, 200, depotView());
+  if (method === 'GET' && path === '/api/depot') {
+    const access = accessOf(req), { positions: list, stats } = depotView();
+    return json(res, 200, { positions: list.map((p) => redactPosition(p, access)), stats, locked: !access.active });
+  }
+  if (method === 'GET' && path === '/api/legal') { const out = {}; for (const k of LEGAL_KEYS) out[k] = kv.get(`legal_${k}`, ''); return json(res, 200, out); }
+
+  // Member accounts
+  if (method === 'GET' && path === '/api/account/me') return json(res, 200, me(req));
+  if (method === 'POST' && path === '/api/account/register') {
+    const { email, password } = parseCredentials(await readJson(req), { register: true });
+    rateLimit(ip, 'register');
+    if (users.byEmail(email)) throw new HttpError(409, 'An account with this email already exists. Please log in.');
+    const user = users.create(email, await hashPassword(password));
+    return json(res, 201, me(req, user), { 'Set-Cookie': userCookie(makeUserToken(user.id), isHttps(req)) });
+  }
+  if (method === 'POST' && path === '/api/account/login') {
+    if (!loginAllowed(`u:${ip}`)) throw new HttpError(429, 'Too many attempts. Try again later.');
+    const { email, password } = parseCredentials(await readJson(req));
+    const user = users.byEmail(email);
+    // Verify against a dummy hash for unknown emails so response time does not reveal which emails exist.
+    const ok = await verifyPassword(password, user?.pw_hash ?? DUMMY_HASH) && !!user;
+    recordLogin(`u:${ip}`, ok);
+    if (!ok) throw new HttpError(401, 'Wrong email or password');
+    return json(res, 200, me(req, user), { 'Set-Cookie': userCookie(makeUserToken(user.id), isHttps(req)) });
+  }
+  if (method === 'POST' && path === '/api/account/logout') return json(res, 200, { ok: true }, { 'Set-Cookie': clearUserCookie() });
+  if (path.startsWith('/api/account/') && path !== '/api/account/') {
+    const user = currentUser(req);
+    if (!user) throw new HttpError(401, 'Please log in');
+    if (method === 'POST' && path === '/api/account/checkout') {
+      if (!paymentsEnabled()) throw new HttpError(503, 'Payments are not set up yet. Please check back soon.');
+      if (accessFor({ user, admin: false, config: { days_left: 0 } }).active) throw new HttpError(400, 'You already have an active membership.');
+      return json(res, 200, { url: await createCheckout({ user, baseUrl: publicUrl(req) }) });
+    }
+    if (method === 'POST' && path === '/api/account/portal') {
+      if (!paymentsEnabled() || !user.stripe_customer_id) throw new HttpError(400, 'There is no billing profile for this account yet.');
+      return json(res, 200, { url: await createPortal({ user, baseUrl: publicUrl(req) }) });
+    }
+    if (method === 'DELETE' && path === '/api/account/me') {
+      const body = await readJson(req);
+      if (!(await verifyPassword(String(body.password ?? ''), user.pw_hash))) throw new HttpError(401, 'Wrong password');
+      if (['active', 'trialing', 'past_due'].includes(user.sub_status)) throw new HttpError(409, 'Please cancel your subscription first (Manage billing), then delete the account.');
+      users.remove(user.id);
+      return json(res, 200, { ok: true }, { 'Set-Cookie': clearUserCookie() });
+    }
+  }
+  if (method === 'POST' && path === '/api/stripe/webhook') {
+    if (!paymentsEnabled() || !process.env.STRIPE_WEBHOOK_SECRET) throw new HttpError(503, 'Payments are not set up');
+    let event;
+    try { event = await verifyWebhook(await readRaw(req), req.headers['stripe-signature'] || '', undefined); }
+    catch { throw new HttpError(400, 'Invalid signature'); }
+    return json(res, 200, { received: true, ...applyEvent(event) });
+  }
 
   // Auth
   if (method === 'POST' && path === '/api/admin/login') {
@@ -141,7 +239,7 @@ async function api(req, res, url) {
     const ok = checkPassword(body.password ?? '');
     recordLogin(ip, ok);
     if (!ok) throw new HttpError(401, 'Wrong password');
-    return json(res, 200, { ok: true }, { 'Set-Cookie': sessionCookie(makeToken(), req.headers['x-forwarded-proto'] === 'https') });
+    return json(res, 200, { ok: true }, { 'Set-Cookie': sessionCookie(makeToken(), isHttps(req)) });
   }
   if (method === 'POST' && path === '/api/admin/logout') {
     return json(res, 200, { ok: true }, { 'Set-Cookie': clearCookie() });
@@ -157,6 +255,20 @@ async function api(req, res, url) {
   if (method === 'GET' && path === '/api/admin/analyses') return json(res, 200, analyses.list(false));
   if (method === 'GET' && path === '/api/admin/messages') return json(res, 200, messages.list());
 
+  // Members and legal texts
+  if (method === 'GET' && path === '/api/admin/users') {
+    return json(res, 200, users.list().map((u) => ({ id: u.id, email: u.email, comped: !!u.comped, sub_status: u.sub_status, sub_period_end: u.sub_period_end, created_at: u.created_at,
+      access: accessFor({ user: u, admin: false, config: { days_left: 0 } }).reason })));
+  }
+  let um = /^\/api\/admin\/users\/(\d+)$/.exec(path);
+  if (um && method === 'PUT') {
+    const u = users.get(Number(um[1])); if (!u) throw new HttpError(404, 'Not found');
+    users.update(u.id, { comped: (await readJson(req)).comped ? 1 : 0 });
+    return json(res, 200, { ok: true });
+  }
+  if (method === 'GET' && path === '/api/admin/legal') { const out = {}; for (const k of LEGAL_KEYS) out[k] = kv.get(`legal_${k}`, ''); return json(res, 200, out); }
+  if (method === 'PUT' && path === '/api/admin/legal') { const d = parseLegal(await readJson(req)); for (const k of LEGAL_KEYS) kv.set(`legal_${k}`, d[k]); return json(res, 200, d); }
+
   // Settings, agent status and test
   if (method === 'PUT' && path === '/api/admin/config') {
     const d = parseSettings(await readJson(req));
@@ -165,11 +277,40 @@ async function api(req, res, url) {
   }
   if (method === 'GET' && path === '/api/admin/agent-status') {
     return json(res, 200, { provider: providerName(), model: providerName() === 'claude' ? (process.env.CLAUDE_MODEL || 'claude-opus-5-5') : null,
-      key_configured: Boolean(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN), fallback: process.env.CLAUDE_FALLBACK !== 'off' });
+      key_configured: Boolean(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN), fallback: process.env.CLAUDE_FALLBACK !== 'off',
+      briefing_auto: process.env.BRIEFING_AUTO === '1', briefing_news: process.env.BRIEFING_NEWS || 'none' });
   }
   if (method === 'POST' && path === '/api/admin/agent-test') {
     try { return json(res, 200, await testAgent()); }
     catch (e) { throw new HttpError(502, e.message); }
+  }
+
+  // Daily briefing (also created at 09:00 Berlin time when BRIEFING_AUTO=1)
+  if (method === 'GET' && path === '/api/admin/briefings') return json(res, 200, briefings.list(14).map(({ pack, ...b }) => b));
+  if (method === 'POST' && path === '/api/admin/briefings') {
+    try { const b = await runBriefing(berlinParts(new Date()).day); return json(res, 200, { id: b.id, day: b.day }); }
+    catch (e) { throw new HttpError(502, `Briefing failed: ${e.message}`); }
+  }
+  let bm = /^\/api\/admin\/briefings\/(\d+)(\/pack)?$/.exec(path);
+  if (bm) {
+    const b = briefings.get(Number(bm[1]));
+    if (!b) throw new HttpError(404, 'Not found');
+    if (!bm[2]) {
+      if (method === 'GET') return json(res, 200, b);
+      if (method === 'DELETE') { briefings.remove(b.id); return json(res, 200, { ok: true }); }
+    } else {
+      if (method === 'GET') return json(res, 200, { content: b.pack, status: b.status });
+      if (method === 'POST') {
+        try { const nb = await runBriefing(b.day); return json(res, 200, { content: nb.pack, status: nb.status }); }
+        catch (e) { throw new HttpError(502, `Briefing failed: ${e.message}`); }
+      }
+      if (method === 'PUT') {
+        const body = await readJson(req);
+        const pack = finalize({ ...body.content, provider: b.pack.provider, chart_notes: b.pack.chart_notes });
+        const nb = briefings.update(b.id, { briefing: b.briefing, sources: b.sources, pack }, body.status === 'approved' ? 'approved' : 'draft');
+        return json(res, 200, { content: nb.pack, status: nb.status });
+      }
+    }
   }
 
   // Website promo pack (ad for the site itself)
@@ -268,26 +409,47 @@ async function api(req, res, url) {
 const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://localhost');
+    if (isHttps(req)) res.setHeader('Strict-Transport-Security', 'max-age=31536000');
+    if (url.pathname === '/healthz') { db.prepare('SELECT 1').get(); return send(res, 200, 'ok', { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store' }); }
+    if (url.pathname === '/robots.txt') {
+      return send(res, 200, `User-agent: *\nDisallow: /admin\nDisallow: /api/\nSitemap: ${publicUrl(req)}/sitemap.xml\n`, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=3600' });
+    }
+    if (url.pathname === '/sitemap.xml') {
+      const base = publicUrl(req);
+      const urls = ['/', '/analyses', '/depot', '/pricing', '/support', ...analyses.list(true).map((a) => `/analysis?id=${a.id}`)];
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `  <url><loc>${base}${u.replace(/&/g, '&amp;')}</loc></url>`).join('\n')}\n</urlset>\n`;
+      return send(res, 200, xml, { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' });
+    }
     if (url.pathname.startsWith('/api/')) return await api(req, res, url);
 
     if (url.pathname.startsWith('/uploads/')) {
       const name = url.pathname.slice('/uploads/'.length);
       if (!/^[a-f0-9]{24}\.(png|jpg|webp)$/.test(name)) return send(res, 404, 'Not found');
-      return await serveFile(res, join(UPLOAD_DIR, name), 'public, max-age=31536000, immutable');
+      return await serveFile(req, res, join(UPLOAD_DIR, name), 'public, max-age=31536000, immutable');
     }
 
     const pages = { '/': '/index.html', '/analyses': '/analyses.html', '/analysis': '/analysis.html',
-      '/pricing': '/pricing.html', '/support': '/support.html', '/depot': '/depot.html', '/admin': '/admin.html' };
+      '/pricing': '/pricing.html', '/support': '/support.html', '/depot': '/depot.html', '/admin': '/admin.html',
+      '/account': '/account.html', '/imprint': '/legal.html', '/privacy': '/legal.html', '/terms': '/legal.html' };
     const clean = pages[url.pathname] || url.pathname;
     const file = normalize(join(PUBLIC_DIR, clean));
     if (!file.startsWith(PUBLIC_DIR + sep)) return send(res, 403, 'Forbidden');
-    return await serveFile(res, file, extname(file) === '.html' ? 'no-cache' : 'public, max-age=3600');
+    return await serveFile(req, res, file, extname(file) === '.html' ? 'no-cache' : 'public, max-age=3600');
   } catch (e) {
     if (e instanceof HttpError) return json(res, e.status, { error: e.message });
     console.error(e);
     return json(res, 500, { error: 'Internal server error' });
   }
 });
+
+if (process.env.BRIEFING_AUTO === '1') {
+  startScheduler({
+    run: async (day) => { const b = await runBriefing(day); messages.create({ name: '(daily briefing)', email: 'noreply@localhost', topic: 'Daily briefing', message: `The briefing for ${day} is ready in the admin Briefing tab. Review it before you post anything.` }); console.log(`Daily briefing for ${day} created (id ${b.id}).`); },
+    getLastDay: () => briefings.latestDay(),
+    onFail: (day, e) => messages.create({ name: '(daily briefing)', email: 'noreply@localhost', topic: 'Daily briefing', message: `The briefing for ${day} failed 3 times: ${e.message}` }),
+  });
+  console.log('Daily briefing scheduler on (09:00 Europe/Berlin).');
+}
 
 server.listen(PORT, () => {
   console.log(`Apex Wave Capital running on http://localhost:${PORT}`);

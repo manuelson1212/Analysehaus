@@ -26,5 +26,6 @@ api(`/api/analyses/${id}`).then((a) => {
         field('Targets', a.targets),
         field('Fibonacci levels', a.fib_levels),
         field('Invalidation', a.invalidation, 'inval'),
+        a.locked && h('div', { class: 'lock-box' }, h('b', {}, 'Members only'), h('p', { class: 'muted' }, 'Alternate scenario, targets, Fibonacci levels, invalidation and the full written analysis.'), h('a', { class: 'btn sm', href: routeUrl('account') }, 'Unlock with a membership')),
         a.tags.length ? h('div', { class: 'row' }, a.tags.map((t) => h('span', { class: 'tag' }, `#${t}`))) : null)));
 }).catch(() => root.replaceChildren(h('div', { class: 'empty' }, 'Analysis not found. ', h('a', { href: '/' }, 'Back to analyses'))));

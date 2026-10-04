@@ -17,8 +17,9 @@ document.getElementById('filters').addEventListener('click', (e) => {
   render();
 });
 
-api('/api/depot').then(({ positions, stats }) => {
+api('/api/depot').then(({ positions, stats, locked }) => {
   all = positions;
+  document.getElementById('lock-note').hidden = !locked;
   $('t-rate').textContent = stats.closed ? `${stats.hit_rate}%` : '–';
   $('t-rate-sub').textContent = stats.closed ? `${stats.hits} of ${stats.closed} closed calls` : 'no closed calls yet';
   $('t-avg').textContent = stats.avg_result == null ? '–' : `${stats.avg_result > 0 ? '+' : ''}${stats.avg_result}%`;

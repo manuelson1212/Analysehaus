@@ -1,5 +1,5 @@
 // Depot table and proof viewer, shared by the home preview and the depot page.
-import { h, imgUrl } from './dom.js';
+import { h, imgUrl, routeUrl } from './dom.js';
 
 const nf = (n) => (n == null ? '–' : Number(n).toLocaleString('en-US', { maximumFractionDigits: 4 }));
 const pct = (n) => (n == null ? '–' : `${n > 0 ? '+' : ''}${n.toFixed(2)}%`);
@@ -35,15 +35,16 @@ export function depotTable(list, { compact = false } = {}) {
   const rows = list.map((p) => {
     const r = resultOf(p);
     const hasProof = p.evidence || p.evidence_url || p.note;
+    const lock = (cls) => h('td', { class: `num ${cls}` }, h('a', { class: 'lock-chip', href: routeUrl('account'), title: 'Members only' }, 'Members'));
     return h('tr', {},
       h('td', {}, h('b', { class: 'mono' }, p.asset), ' ', h('span', { class: `dir ${p.direction}` }, p.direction)),
-      h('td', { class: 'num' }, p.buy_low != null || p.buy_high != null ? `${nf(p.buy_low)} – ${nf(p.buy_high)}` : '–'),
-      h('td', { class: 'num down' }, nf(p.stop)),
-      h('td', { class: 'num up' }, nf(p.target)),
+      p.locked ? lock('') : h('td', { class: 'num' }, p.buy_low != null || p.buy_high != null ? `${nf(p.buy_low)} – ${nf(p.buy_high)}` : '–'),
+      p.locked ? lock('') : h('td', { class: 'num down' }, nf(p.stop)),
+      p.locked ? lock('') : h('td', { class: 'num up' }, nf(p.target)),
       h('td', {}, h('span', { class: `st ${p.status}` }, STATUS[p.status])),
       h('td', { class: `num ${r == null ? '' : r >= 0 ? 'up' : 'down'}` }, pct(r)),
       !compact && h('td', { class: 'muted' }, p.opened_at || '–'),
-      h('td', {}, hasProof ? h('button', { class: 'btn sm ghost', type: 'button', onclick: () => openProof(p) }, 'View') : h('span', { class: 'muted' }, '–')));
+      h('td', {}, p.locked ? h('span', { class: 'muted' }, '–') : hasProof ? h('button', { class: 'btn sm ghost', type: 'button', onclick: () => openProof(p) }, 'View') : h('span', { class: 'muted' }, '–')));
   });
   return h('div', { class: 'scroll-x' }, h('table', { class: 'table depot' }, h('thead', {}, h('tr', {}, head.map((t) => h('th', {}, t)))), h('tbody', {}, rows)));
 }

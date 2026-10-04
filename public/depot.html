@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Live Depot · Apex Wave Capital</title>
   <meta name="description" content="A simulated live depot that tracks every call with buy zone, stop, target and proof.">
+  <meta property="og:site_name" content="Apex Wave Capital">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Live Depot · Apex Wave Capital">
+  <meta property="og:description" content="A simulated live depot that tracks every call with buy zone, stop, target and proof.">
+  <meta name="twitter:card" content="summary">
   <meta name="theme-color" content="#08090b">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/style.css">
@@ -26,6 +31,7 @@
       <div class="tile"><span class="label">Open</span><b id="t-open">–</b><span class="muted">positions running</span></div>
       <div class="tile"><span class="label">Watching</span><b id="t-watch">–</b><span class="muted">waiting for the buy zone</span></div>
     </section>
+    <div class="notice small" id="lock-note" hidden>Zones, stops and targets of running positions are for members. Every closed call is public with its proof. <a data-route="account" href="/account">Unlock with a membership →</a></div>
     <div class="filters" id="filters">
       <button class="chip on" data-status="">All</button>
       <button class="chip" data-status="watching">Watching</button>
