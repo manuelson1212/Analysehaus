@@ -1,4 +1,5 @@
 import { h, imgUrl, detailUrl } from './dom.js';
+import { loc } from './i18n.js';
 
 export const MARKET = { Crypto: 'Krypto', Stocks: 'Aktien' };
 
@@ -15,6 +16,6 @@ export function card(a) {
         h('span', { class: 'badge' }, MARKET[a.market] || a.market)),
       h('div', { class: 'summary' }, summary(a)),
       h('div', { class: 'row' },
-        h('span', { class: 'label' }, new Date(a.analysis_date).toLocaleDateString('de-DE')),
+        h('span', { class: 'label' }, new Date(a.analysis_date).toLocaleDateString(loc())),
         a.tags.slice(0, 3).map((t) => h('span', { class: 'tag' }, `#${t}`)))));
 }

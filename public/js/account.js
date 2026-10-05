@@ -1,4 +1,5 @@
 import { h, api, routeUrl } from './dom.js';
+import { loc } from './i18n.js';
 
 const root = document.getElementById('account');
 const changed = () => window.dispatchEvent(new Event('account-changed'));
@@ -26,9 +27,9 @@ function authForm(mode, onDone) {
 
 function statusText(d) {
   const { access, user, config } = d;
-  if (access.reason === 'free_period') return { title: 'Kostenloser Zugang', text: `Bis ${new Date(config.free_until).toLocaleDateString('de-DE')} ist alles frei (noch ${config.days_left} Tage). Danach brauchen die Details eine Mitgliedschaft.` };
+  if (access.reason === 'free_period') return { title: 'Kostenloser Zugang', text: `Bis ${new Date(config.free_until).toLocaleDateString(loc())} ist alles frei (noch ${config.days_left} Tage). Danach brauchen die Details eine Mitgliedschaft.` };
   if (access.reason === 'comped') return { title: 'Kostenloser Zugang freigeschaltet', text: 'Dein Konto hat kostenlosen Zugang zu allen Details.' };
-  if (access.reason === 'member') return { title: 'Aktive Mitgliedschaft', text: user.sub_period_end ? `Der aktuelle Zeitraum endet am ${new Date(user.sub_period_end).toLocaleDateString('de-DE')}.` : 'Danke für deine Unterstützung.' };
+  if (access.reason === 'member') return { title: 'Aktive Mitgliedschaft', text: user.sub_period_end ? `Der aktuelle Zeitraum endet am ${new Date(user.sub_period_end).toLocaleDateString(loc())}.` : 'Danke für deine Unterstützung.' };
   return { title: 'Keine aktive Mitgliedschaft', text: `Chart, Wellenzählung und die Erfolgsbilanz sind öffentlich. Eine Mitgliedschaft (${config.price} € pro Monat) schaltet alle Details frei.` };
 }
 

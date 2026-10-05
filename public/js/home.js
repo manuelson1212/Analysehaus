@@ -1,4 +1,5 @@
 import { h, api, bindLinks } from './dom.js';
+import { loc } from './i18n.js';
 import { mountAtmosphere } from './atmosphere.js';
 import { mountWaveHero } from './wave-hero.js';
 import { socialLinks } from './social.js';
@@ -43,11 +44,11 @@ const io = 'IntersectionObserver' in window ? new IntersectionObserver((entries)
 const setCount = (el, value, suffix = '') => { if (io && value > 0 && !reduce) { pending.set(el, [value, suffix]); io.observe(el); } else countTo(el, value, suffix); };
 
 // Ticker band: live prices when the server could fetch them, plus the site's key facts. Content is doubled for a seamless loop.
-function fmtPrice(p) { return p.toLocaleString('de-DE', { maximumFractionDigits: p >= 1000 ? 0 : 2, minimumFractionDigits: p >= 1000 ? 0 : 2 }); }
+function fmtPrice(p) { return p.toLocaleString(loc(), { maximumFractionDigits: p >= 1000 ? 0 : 2, minimumFractionDigits: p >= 1000 ? 0 : 2 }); }
 function renderTicker(coins) {
   const facts = ['Klassische Elliott-Wellen nach Prechter/Frost', 'Kaufzone, Stop und Ziel vorab', 'Jeder Call im Live-Depot', 'Die ersten 30 Tage kostenlos'];
   const items = () => [
-    ...coins.map((c) => h('span', { class: 'tk' }, h('b', {}, c.sym), ` $${fmtPrice(c.price)} `, h('span', { class: c.change >= 0 ? 'up' : 'down' }, `${c.change >= 0 ? '▲' : '▼'} ${Math.abs(c.change).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`))),
+    ...coins.map((c) => h('span', { class: 'tk' }, h('b', {}, c.sym), ` $${fmtPrice(c.price)} `, h('span', { class: c.change >= 0 ? 'up' : 'down' }, `${c.change >= 0 ? '▲' : '▼'} ${Math.abs(c.change).toLocaleString(loc(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`))),
     ...facts.map((f) => h('span', { class: 'tk fact' }, f)),
   ];
   const track = $('ticker-track');

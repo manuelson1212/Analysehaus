@@ -1,5 +1,6 @@
 // "Verträge hier kündigen" (§ 312k BGB): form, confirmation page with "Jetzt kündigen", receipt. Works without login.
 import { h, api } from './dom.js';
+import { loc } from './i18n.js';
 
 const root = document.getElementById('cancel');
 const head = (title, lede) => h('div', { class: 'page-head' }, h('p', { class: 'eyebrow' }, 'Kündigung'), h('h1', {}, title), lede && h('p', { class: 'lede' }, lede));
@@ -49,9 +50,9 @@ function step2(error) {
 }
 
 function step3(r) {
-  const when = new Date(`${r.created_at.replace(' ', 'T')}Z`).toLocaleString('de-DE', { dateStyle: 'long', timeStyle: 'short' });
+  const when = new Date(`${r.created_at.replace(' ', 'T')}Z`).toLocaleString(loc(), { dateStyle: 'long', timeStyle: 'short' });
   const status = r.result === 'scheduled'
-    ? `Dein Abo wurde zum Ende des bezahlten Zeitraums gekündigt${r.ends ? ` (${new Date(r.ends).toLocaleDateString('de-DE')})` : ''}. Bis dahin behältst du vollen Zugang.`
+    ? `Dein Abo wurde zum Ende des bezahlten Zeitraums gekündigt${r.ends ? ` (${new Date(r.ends).toLocaleDateString(loc())})` : ''}. Bis dahin behältst du vollen Zugang.`
     : 'Wir bearbeiten deine Kündigung und bestätigen sie dir per E-Mail.';
   const row = (k, v) => h('div', { class: 'kv-line' }, h('span', { class: 'label' }, k), h('span', {}, v));
   root.replaceChildren(head('Deine Kündigung ist eingegangen'),

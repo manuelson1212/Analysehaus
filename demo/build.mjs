@@ -45,7 +45,9 @@ addEventListener('hashchange', route);
 window.__layout.mountLayout('home');
 route();`;
 
-const html = `<title>Apex Wave Capital</title>
+const boot = readFileSync('public/js/lang-boot.js', 'utf8');
+const html = `<script>${boot}</script>
+<title>Apex Wave Capital</title>
 <style>${css}</style>
 <header class="site-header" id="site-header"></header>
 <div class="free-bar" id="free-bar"></div>

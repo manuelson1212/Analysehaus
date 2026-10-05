@@ -1,8 +1,16 @@
 // Shared site chrome: header with always-visible navigation, free-access bar, footer, scroll reveal.
 import { h, api, bindLinks, routeUrl } from './dom.js';
+import { loc, lang, setLang, startTranslation } from './i18n.js';
 import { socialLinks } from './social.js';
 
 const NAV = [['home', 'Start'], ['analyses', 'Analysen'], ['depot', 'Live-Depot'], ['pricing', 'Preise'], ['support', 'Kontakt']];
+
+// DE | EN switch. The labels are language names, so they stay the same in both languages.
+function langSwitch() {
+  const cur = lang();
+  return h('div', { class: 'lang-switch', role: 'group', 'aria-label': 'Sprache / Language' },
+    ['de', 'en'].map((l) => h('button', { type: 'button', class: l === cur ? 'on' : null, lang: l, 'aria-pressed': String(l === cur), 'data-no-i18n': '', onclick: () => l !== cur && setLang(l) }, l.toUpperCase())));
+}
 
 function header() {
   return h('div', { class: 'wrap bar' },
@@ -10,6 +18,7 @@ function header() {
     h('nav', { class: 'nav', id: 'main-nav', 'aria-label': 'Hauptnavigation' },
       NAV.map(([key, label]) => h('a', { class: 'nav-link', 'data-route': key, href: routeUrl(key) }, label))),
     h('div', { class: 'bar-right' },
+      langSwitch(),
       h('a', { class: 'nav-login', id: 'nav-login', 'data-route': 'account', href: routeUrl('account') }, 'Login'),
       h('a', { class: 'btn sm nav-cta', 'data-route': 'pricing', href: routeUrl('pricing') }, 'Mitgliedschaft')));
 }
@@ -62,7 +71,7 @@ async function freeBar() {
     const social = socialLinks(c.profile, { compact: true });
     document.getElementById('foot-social')?.replaceChildren(...(social ? [social] : []));
     host.replaceChildren(c.days_left > 0
-      ? h('div', { class: 'wrap free-inner' }, h('span', { class: 'live-dot', 'aria-hidden': 'true' }), h('b', {}, `Noch ${c.days_left} Tage kostenlos`), h('span', { class: 'muted' }, `endet am ${new Date(c.free_until).toLocaleDateString('de-DE')}. Sag uns, was wir verbessern können.`), h('a', { 'data-route': 'account', href: routeUrl('account') }, 'Konto erstellen →'))
+      ? h('div', { class: 'wrap free-inner' }, h('span', { class: 'live-dot', 'aria-hidden': 'true' }), h('b', {}, `Noch ${c.days_left} Tage kostenlos`), h('span', { class: 'muted' }, `endet am ${new Date(c.free_until).toLocaleDateString(loc())}. Sag uns, was wir verbessern können.`), h('a', { 'data-route': 'account', href: routeUrl('account') }, 'Konto erstellen →'))
       : h('div', { class: 'wrap free-inner' }, h('b', {}, 'Die Mitgliedschaft ist jetzt kostenpflichtig'), h('a', { 'data-route': 'pricing', href: routeUrl('pricing') }, 'Zur Mitgliedschaft →')));
     bindLinks(host);
   } catch { host.replaceChildren(); }
@@ -77,5 +86,6 @@ export function mountLayout(page) {
   freeBar();
 }
 
+startTranslation();
 window.__layout = { mountLayout, setActive, initReveal, bindLinks };
 if (document.body.dataset.page && !window.__DEMO_ROUTER__) mountLayout(document.body.dataset.page);

@@ -1,8 +1,9 @@
 // Depot table and proof viewer, shared by the home preview and the depot page.
 import { h, imgUrl, routeUrl } from './dom.js';
+import { loc } from './i18n.js';
 
-const nf = (n) => (n == null ? '–' : Number(n).toLocaleString('de-DE', { maximumFractionDigits: 4 }));
-const pct = (n) => (n == null ? '–' : `${n > 0 ? '+' : ''}${n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`);
+const nf = (n) => (n == null ? '–' : Number(n).toLocaleString(loc(), { maximumFractionDigits: 4 }));
+const pct = (n) => (n == null ? '–' : `${n > 0 ? '+' : ''}${n.toLocaleString(loc(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`);
 export const STATUS = { watching: 'Beobachtet', open: 'Offen', hit: 'Ziel erreicht', stopped: 'Ausgestoppt' };
 
 export function resultOf(p) {
@@ -43,7 +44,7 @@ export function depotTable(list, { compact = false } = {}) {
       p.locked ? lock('') : h('td', { class: 'num up' }, nf(p.target)),
       h('td', {}, h('span', { class: `st ${p.status}` }, STATUS[p.status])),
       h('td', { class: `num ${r == null ? '' : r >= 0 ? 'up' : 'down'}` }, pct(r)),
-      !compact && h('td', { class: 'muted' }, p.opened_at ? new Date(p.opened_at).toLocaleDateString('de-DE') : '–'),
+      !compact && h('td', { class: 'muted' }, p.opened_at ? new Date(p.opened_at).toLocaleDateString(loc()) : '–'),
       h('td', {}, p.locked ? h('span', { class: 'muted' }, '–') : hasProof ? h('button', { class: 'btn sm ghost', type: 'button', onclick: () => openProof(p) }, 'Ansehen') : h('span', { class: 'muted' }, '–')));
   });
   return h('div', { class: 'scroll-x' }, h('table', { class: 'table depot' }, h('thead', {}, h('tr', {}, head.map((t) => h('th', {}, t)))), h('tbody', {}, rows)));

@@ -1,4 +1,5 @@
 import { h, api } from './dom.js';
+import { loc } from './i18n.js';
 import { depotTable } from './depot-ui.js';
 
 const $ = (id) => document.getElementById(id);
@@ -22,7 +23,7 @@ api('/api/depot').then(({ positions, stats, locked }) => {
   document.getElementById('lock-note').hidden = !locked;
   $('t-rate').textContent = stats.closed ? `${stats.hit_rate}%` : '–';
   $('t-rate-sub').textContent = stats.closed ? `${stats.hits} von ${stats.closed} abgeschlossenen Calls` : 'noch keine abgeschlossenen Calls';
-  $('t-avg').textContent = stats.avg_result == null ? '–' : `${stats.avg_result > 0 ? '+' : ''}${stats.avg_result.toLocaleString('de-DE')} %`;
+  $('t-avg').textContent = stats.avg_result == null ? '–' : `${stats.avg_result > 0 ? '+' : ''}${stats.avg_result.toLocaleString(loc())} %`;
   $('t-open').textContent = String(stats.open);
   $('t-watch').textContent = String(stats.watching);
   render();

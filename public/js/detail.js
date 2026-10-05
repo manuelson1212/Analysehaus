@@ -1,4 +1,5 @@
 import { h, api, imgUrl, routeUrl } from './dom.js';
+import { loc } from './i18n.js';
 import { MARKET } from './cards.js';
 
 const root = document.getElementById('root');
@@ -13,7 +14,7 @@ api(`/api/analyses/${id}`).then((a) => {
     h('div', { class: 'page-head' },
       h('a', { class: 'link-arrow back', href: routeUrl('analyses') }, '← Alle Analysen'),
       h('div', { class: 'row' },
-        h('span', { class: 'label' }, `${MARKET[a.market] || a.market} · ${new Date(a.analysis_date).toLocaleDateString('de-DE')}`),
+        h('span', { class: 'label' }, `${MARKET[a.market] || a.market} · ${new Date(a.analysis_date).toLocaleDateString(loc())}`),
         a.status !== 'published' && h('span', { class: 'badge' }, 'Entwurf')),
       h('h1', {}, `${a.asset} · ${a.timeframe}`)),
     h('div', { class: 'detail' },

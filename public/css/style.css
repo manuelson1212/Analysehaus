@@ -43,6 +43,11 @@ img { max-width: 100%; display: block; }
 .nav-link:hover, .nav-link.on { color: var(--text); text-decoration: none; }
 .nav-link:hover::after, .nav-link.on::after { transform: scaleX(1); }
 .bar-right { display: flex; align-items: center; gap: 16px; }
+.lang-pending body { visibility: hidden; }
+.lang-switch { display: inline-flex; border: 1px solid var(--line-2); border-radius: 999px; padding: 2px; }
+.lang-switch button { background: none; border: 0; border-radius: 999px; padding: 4px 9px; min-height: 28px; font: 600 11px var(--mono); letter-spacing: .06em; color: var(--muted); cursor: pointer; }
+.lang-switch button.on { background: var(--accent); color: #111; }
+.lang-switch button:not(.on):hover { color: var(--text); }
 .nav-login { color: var(--muted); font: 13px var(--mono); } .nav-login:hover { color: var(--accent); text-decoration: none; }
 @media (max-width: 860px) {
   .site-header { min-height: 0; }
