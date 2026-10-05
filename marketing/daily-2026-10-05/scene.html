@@ -1,0 +1,265 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}canvas{display:block}</style></head>
+<body><canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Daily analysis, 5 Oct 2026 (9:16, ~31 s). render(t) draws the frame at time t; scenes follow the voice-over timeline.
+// Figures come from the daily analysis text (status 05.10.2026). Key text stays inside TikTok's safe area (y 230–1500).
+const TL = window.TIMELINE; // { hook, ma, q3, hist, key, macro, cta: {start,end}, total }
+const W = 1080, H = 1920, TAU = Math.PI * 2;
+const ctx = document.getElementById('c').getContext('2d');
+const C = { bg: '#05070a', text: '#eef1f5', muted: '#8a93a3', orange: '#f7931a', hi: '#ffc46b', blue: '#4f8cff', red: '#ff5c5c', green: '#3ddc84', grey: '#c9ced6' };
+const SERIF = '"DejaVu Serif", Georgia, serif', MONO = '"DejaVu Sans Mono", monospace', SANS = '"DejaVu Sans", sans-serif';
+
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, u) => a + (b - a) * u;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const eOut = (u) => 1 - (1 - clamp(u)) ** 3;
+const eInOut = (u) => { u = clamp(u); return u < 0.5 ? 4 * u * u * u : 1 - (-2 * u + 2) ** 3 / 2; };
+const eBack = (u) => { u = clamp(u); const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * (u - 1) ** 3 + c1 * (u - 1) ** 2; };
+const hash = (n) => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
+const noise = (x) => { const i = Math.floor(x), f = x - i, u = f * f * (3 - 2 * f); return lerp(hash(i), hash(i + 1), u) * 2 - 1; };
+
+const ORDER = ['hook', 'ma', 'q3', 'hist', 'key', 'macro', 'cta'];
+// Scene k runs from just before its voice line to just before the next one.
+const SC = ORDER.map((k, i) => ({ k, a: i ? TL[k].start - 0.18 : 0, b: i < ORDER.length - 1 ? TL[ORDER[i + 1]].start - 0.18 : TL.total }));
+
+/* ---------- drawing helpers ---------- */
+function text(str, x, y, font, color, align = 'left', alpha = 1) {
+  if (alpha <= 0) return;
+  ctx.globalAlpha = clamp(alpha); ctx.font = font; ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = 'alphabetic'; ctx.fillText(str, x, y); ctx.globalAlpha = 1;
+}
+function pill(label, x, y, color, alpha = 1, scale = 1, fill = false, size = 34) {
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha = clamp(alpha); ctx.translate(x, y); ctx.scale(scale, scale);
+  ctx.font = `700 ${size}px ${MONO}`; const w = ctx.measureText(label).width + size * 1.6, h = size * 2;
+  ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, h / 2);
+  ctx.fillStyle = fill ? color : 'rgba(5,7,10,0.85)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = color; ctx.stroke();
+  ctx.fillStyle = fill ? '#111' : color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, 0, 2);
+  ctx.restore();
+}
+function polyline(pts, draw, color, width, glow = false, dash = null) {
+  const segs = []; let total = 0;
+  for (let i = 1; i < pts.length; i++) { const l = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); segs.push(l); total += l; }
+  const left = total * clamp(draw); if (left <= 0) return;
+  const path = () => {
+    ctx.beginPath(); ctx.moveTo(...pts[0]); let rem = left;
+    for (let i = 1; i < pts.length && rem > 0; i++) { const f = Math.min(1, rem / segs[i - 1]); ctx.lineTo(lerp(pts[i - 1][0], pts[i][0], f), lerp(pts[i - 1][1], pts[i][1], f)); rem -= segs[i - 1]; }
+  };
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (glow) { path(); ctx.strokeStyle = color === C.orange ? 'rgba(247,147,26,0.28)' : 'rgba(255,255,255,0.12)'; ctx.lineWidth = width * 3; ctx.filter = 'blur(12px)'; ctx.stroke(); ctx.filter = 'none'; }
+  if (dash) ctx.setLineDash(dash);
+  path(); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke(); ctx.setLineDash([]);
+}
+function hline(y, x0, x1, color, draw = 1, width = 4, dash = [16, 12]) { polyline([[x0, y], [x0 + (x1 - x0) * clamp(draw), y]], 1, color, width, false, dash); }
+function panel(x, y, w, h, alpha = 1, border = 'rgba(247,147,26,0.5)') {
+  ctx.save(); ctx.globalAlpha = clamp(alpha);
+  const g = ctx.createLinearGradient(0, y, 0, y + h); g.addColorStop(0, '#111a28'); g.addColorStop(1, '#090d14');
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, 34); ctx.fillStyle = g; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = border; ctx.stroke(); ctx.restore();
+}
+function mark(x, y, s, alpha = 1) {
+  const P = [[180, 690], [330, 500], [410, 590], [610, 300], [690, 390], [830, 190]].map(([px, py]) => [x + (px - 180) * s, y + (py - 190) * s]);
+  ctx.globalAlpha = alpha; polyline(P, 1, C.orange, 64 * s, true);
+  const [ax, ay] = P.at(-1); ctx.beginPath(); ctx.arc(ax, ay, 40 * s, 0, TAU); ctx.fillStyle = C.bg; ctx.fill(); ctx.lineWidth = 27 * s; ctx.strokeStyle = C.orange; ctx.stroke(); ctx.globalAlpha = 1;
+}
+// Word-by-word headline: words appear in turn between t0 and t1.
+function words(list, x, y, size, t, t0, t1, colors = {}, lineH = 1.12, maxW = 920) {
+  ctx.font = `700 ${size}px ${SERIF}`;
+  const lines = [[]]; let lw = 0;
+  list.forEach((w, i) => { const ww = ctx.measureText(w + ' ').width; if (lw + ww > maxW && lines.at(-1).length) { lines.push([]); lw = 0; } lines.at(-1).push(i); lw += ww; });
+  lines.forEach((ln, li) => {
+    let cx = x;
+    ln.forEach((i) => {
+      const w = list[i], at = lerp(t0, t1, i / Math.max(1, list.length - 1)), u = prog(t, at, at + 0.22), ww = ctx.measureText(w + ' ').width;
+      ctx.save(); ctx.translate(cx, y + li * size * lineH + (1 - eOut(u)) * 30); text(w, 0, 0, `700 ${size}px ${SERIF}`, colors[i] || C.text, 'left', eOut(u)); ctx.restore(); cx += ww;
+    });
+  });
+}
+
+/* ---------- background, brand, footer ---------- */
+function background(t, tint = 'orange') {
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+  const g = ctx.createRadialGradient(W * 0.78, H * 0.3, 0, W * 0.78, H * 0.3, H * 0.75);
+  g.addColorStop(0, tint === 'red' ? 'rgba(255,92,92,0.16)' : tint === 'blue' ? 'rgba(79,140,255,0.16)' : 'rgba(247,147,26,0.18)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = 'rgba(120,140,170,0.07)'; ctx.lineWidth = 1;
+  const off = (t * 24) % 90;
+  for (let y = -off; y < H; y += 90) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  for (let x = 0; x < W; x += 90) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let i = 0; i < 7; i++) {
+    const k = i / 6, base = H * (0.62 + 0.36 * k), amp = 12 + 34 * k; ctx.beginPath();
+    for (let x = 0; x <= W + 16; x += 16) { const u = x / W, th = u * TAU * 1.2 + t * (0.3 + 0.1 * k) + i * 0.8; const y = base - u * 200 * (0.3 + k) + amp * Math.sin(th); x ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.strokeStyle = i % 3 === 1 ? `rgba(79,140,255,${0.04 + 0.08 * k})` : `rgba(247,147,26,${0.03 + 0.1 * k})`; ctx.lineWidth = 1 + 2 * k; ctx.stroke();
+  }
+}
+function chrome(t) {
+  mark(64, 92, 0.075);
+  ctx.font = `700 30px ${MONO}`; ctx.textAlign = 'left'; ctx.fillStyle = C.text; ctx.fillText('APEX WAVE ', 122, 132);
+  ctx.fillStyle = C.orange; ctx.fillText('CAPITAL', 122 + ctx.measureText('APEX WAVE ').width, 132);
+  text('TAGESANALYSE · 05.10.2026', W - 60, 132, `700 26px ${MONO}`, C.muted, 'right');
+  ctx.fillStyle = C.orange; ctx.fillRect(0, 0, W * clamp(t / TL.total), 8);
+  text('Keine Anlageberatung · Daten Stand 05.10.2026', W / 2, 1585, `400 28px ${SANS}`, 'rgba(138,147,163,0.85)', 'center');
+}
+
+/* ---------- 1: hook ---------- */
+function sHook(t, s) {
+  const lt = t - s.a;
+  // rising BTC line behind the headline
+  const pts = []; for (let k = 0; k <= 80; k++) { const u = k / 80; pts.push([60 + u * 960, 1330 - u * 380 - 60 * Math.sin(u * 9) * (1 - u) - noise(u * 22) * 26]); }
+  polyline(pts, eOut(prog(lt, 0, 1.6)), C.orange, 9, true);
+  pill('BITCOIN', 220, 330, C.orange, eBack(prog(lt, 0.05, 0.35)), 1, true, 40);
+  words(['Ein', 'Signal,', 'das', 'es', 'seit', 'über', 'einem', 'Jahr', 'nicht', 'gab.'], 70, 520, 104, t, TL.hook.start + 0.15, TL.hook.end - 0.35, { 1: C.orange, 6: C.hi, 7: C.hi });
+  const p = eBack(prog(lt, 1.2, 1.55));
+  ctx.save(); ctx.translate(W - 250, 1080); ctx.scale(lerp(0.6, 1, clamp(p)), lerp(0.6, 1, clamp(p)));
+  panel(-200, -95, 400, 190, clamp(p));
+  text('BTC', 0, -22, `700 40px ${MONO}`, C.muted, 'center', clamp(p)); text('≈ 86.200 $', 0, 50, `700 58px ${MONO}`, C.text, 'center', clamp(p));
+  ctx.restore();
+}
+
+/* ---------- 2: moving averages converge ---------- */
+function sMA(t, s) {
+  const lt = t - s.a, X = (u) => lerp(90, 990, u), Y = (v) => lerp(1380, 640, v);
+  text('50 · 100 · 200 TAGE', 70, 380, `700 44px ${MONO}`, C.hi, 'left', eOut(prog(lt, 0, 0.3)));
+  text('Alle drei Linien', 70, 480, `700 84px ${SERIF}`, C.text, 'left', eOut(prog(lt, 0.15, 0.45)));
+  text('auf einem Punkt.', 70, 575, `700 84px ${SERIF}`, C.orange, 'left', eOut(prog(lt, 0.35, 0.65)));
+  const conv = 0.72, cv = 0.36; // where they meet (x, level)
+  const ma = (u, start, k) => u < conv ? lerp(start, cv, (u / conv) ** k) : cv + (u - conv) * 0.25;
+  const lines = [['200T', C.grey, 0.66, 0.9], ['100T', C.blue, 0.2, 1.2], ['50T', C.orange, -0.04, 1.6]];
+  const d = eInOut(prog(lt, 0.3, 2.6));
+  lines.forEach(([lab, col, st, k], i) => {
+    const pts = []; for (let j = 0; j <= 60; j++) { const u = j / 60; pts.push([X(u), Y(ma(u, st, k))]); }
+    polyline(pts, d, col, i === 2 ? 8 : 6, i === 2);
+    text(lab, X(0) + 4, Y(st) + (i === 2 ? 46 : -18), `700 32px ${MONO}`, col, 'left', eOut(prog(lt, 0.4 + i * 0.15, 0.7 + i * 0.15)));
+  });
+  // price above the averages
+  const pp = []; for (let j = 0; j <= 80; j++) { const u = j / 80; pp.push([X(u), Y(0.45 + u * 0.38 + noise(u * 18) * 0.05)]); }
+  polyline(pp, eOut(prog(lt, 0.2, 2.4)), 'rgba(255,255,255,0.32)', 3);
+  const m = eBack(prog(lt, 2.4, 2.8)), pulse = 1 + 0.15 * Math.sin(lt * 8) * clamp(m);
+  if (m > 0) {
+    const [mx, my] = [X(conv), Y(cv)];
+    ctx.beginPath(); ctx.arc(mx, my, 26 * pulse * clamp(m), 0, TAU); ctx.fillStyle = 'rgba(247,147,26,0.25)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(mx, my, 12 * clamp(m), 0, TAU); ctx.fillStyle = C.orange; ctx.fill();
+    pill('≈ 79.500 $', mx - 40, my + 100, C.orange, clamp(m), lerp(0.6, 1, clamp(m)), true, 40);
+  }
+  text('Erste vollständig bullische Ausrichtung seit 2025', W / 2, 1490, `600 34px ${SANS}`, C.text, 'center', eOut(prog(lt, 2.7, 3.1)));
+}
+
+/* ---------- 3: Q3 +40 %, now a pause ---------- */
+function sQ3(t, s) {
+  const lt = t - s.a, n = Math.round(40 * eOut(prog(lt, 0.15, 1.2)));
+  text('DRITTES QUARTAL', W / 2, 400, `700 44px ${MONO}`, C.hi, 'center', eOut(prog(lt, 0, 0.3)));
+  ctx.save(); ctx.translate(W / 2, 700); const sc = lerp(0.7, 1, eBack(prog(lt, 0.1, 0.5))); ctx.scale(sc, sc);
+  ctx.shadowColor = 'rgba(61,220,132,0.6)'; ctx.shadowBlur = 50; text(`+${n} %`, 0, 0, `700 260px ${SERIF}`, C.green, 'center'); ctx.shadowBlur = 0; ctx.restore();
+  // climb then flat pause
+  const X = (u) => lerp(120, 960, u), Y = (v) => lerp(1260, 900, v);
+  const pts = []; for (let j = 0; j <= 70; j++) { const u = j / 70; const v = u < 0.62 ? (u / 0.62) ** 1.3 : 1 + noise(u * 30) * 0.04 - (u - 0.62) * 0.08; pts.push([X(u), Y(v)]); }
+  polyline(pts, eOut(prog(lt, 0.2, 1.8)), C.orange, 8, true);
+  const pa = eOut(prog(lt, 1.6, 1.9));
+  pill('PAUSE ≈ 85.000 $', X(0.8), Y(1) - 80, C.text, pa, lerp(0.7, 1, pa));
+  [['US-DOLLAR ↑', 300, 1400, 2.3], ['RENDITEN ↑', 760, 1400, 2.6]].forEach(([l, x, y, at]) => { const u = eBack(prog(lt, at, at + 0.3)); pill(l, x, y, C.red, clamp(u), lerp(0.6, 1, clamp(u))); });
+  text('bremsen', W / 2, 1500, `700 46px ${SERIF}`, C.red, 'center', eOut(prog(lt, 2.8, 3.1)));
+}
+
+/* ---------- 4: history 2020 vs 2025 ---------- */
+function sHist(t, s) {
+  const lt = t - s.a;
+  text('DIESES SIGNAL FRÜHER', W / 2, 380, `700 44px ${MONO}`, C.hi, 'center', eOut(prog(lt, 0, 0.3)));
+  const cards = [[2020, 'ein Vielfaches', C.green, 0.15, 1], [2025, 'nur 97 Tage', C.red, 2.0, 0.18]];
+  cards.forEach(([year, label, col, at, size], i) => {
+    const u = eOut(prog(lt, at, at + 0.45)), x = 90, y = 470 + i * 520;
+    ctx.save(); ctx.translate((1 - u) * (i ? W : -W), 0);
+    panel(x, y, 900, 460, u, col);
+    text(String(year), x + 50, y + 130, `700 110px ${MONO}`, col, 'left', u);
+    text(label, x + 50, y + 215, `700 64px ${SERIF}`, C.text, 'left', u);
+    // bar: how far the move went
+    const g = eOut(prog(lt, at + 0.35, at + 1.4)) * size;
+    ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.beginPath(); ctx.roundRect(x + 50, y + 300, 800, 70, 35); ctx.fill();
+    ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(x + 50, y + 300, Math.max(70, 800 * g), 70, 35); ctx.fill();
+    ctx.restore();
+  });
+}
+
+/* ---------- 5: the key level ---------- */
+function sKey(t, s) {
+  const lt = t - s.a, X = (u) => lerp(90, 990, u), Y = (v) => lerp(1350, 650, v), L = 0.32;
+  text('ENTSCHEIDEND', W / 2, 380, `700 44px ${MONO}`, C.hi, 'center', eOut(prog(lt, 0, 0.25)));
+  const q = eBack(prog(lt, 0.15, 0.5));
+  ctx.save(); ctx.translate(W / 2, 520); ctx.scale(lerp(0.7, 1, clamp(q)), lerp(0.7, 1, clamp(q)));
+  text('Hält die 79.500 $?', 0, 0, `700 92px ${SERIF}`, C.text, 'center', clamp(q)); ctx.restore();
+  hline(Y(L), X(0), X(1), C.orange, eOut(prog(lt, 0.2, 0.8)), 6, [20, 12]);
+  ctx.globalAlpha = 0.12 * eOut(prog(lt, 0.3, 0.8)); ctx.fillStyle = C.orange; ctx.fillRect(X(0), Y(L) - 30, X(1) - X(0), 60); ctx.globalAlpha = 1;
+  // price pulls back to the zone
+  const pts = []; for (let j = 0; j <= 60; j++) { const u = j / 60 * 0.7; const v = 0.86 - (u / 0.7) ** 1.4 * (0.86 - L - 0.02) + noise(u * 25) * 0.03; pts.push([X(u), Y(v)]); }
+  polyline(pts, eOut(prog(lt, 0.3, 1.4)), 'rgba(255,255,255,0.8)', 6);
+  const sc = eOut(prog(lt, 1.4, 1.9));
+  if (sc > 0) {
+    polyline([[X(0.7), Y(L + 0.02)], [X(0.85), Y(0.55)], [X(1), Y(0.82)]], sc, C.green, 7, false, [18, 12]);
+    polyline([[X(0.7), Y(L + 0.02)], [X(0.85), Y(0.18)], [X(1), Y(0.06)]], sc, C.red, 7, false, [18, 12]);
+    pill('HÄLT → TREND INTAKT', X(0.62), Y(0.92), C.green, sc, 0.9);
+    pill('BRICHT → KORREKTUR', X(0.62), Y(-0.02), C.red, sc, 0.9);
+  }
+}
+
+/* ---------- 6: macro tiles ---------- */
+function sMacro(t, s) {
+  const lt = t - s.a;
+  text('UND SONST?', W / 2, 380, `700 44px ${MONO}`, C.hi, 'center', eOut(prog(lt, 0, 0.25)));
+  const tiles = [['ETH', '≈ 2.700 $', '3.000 $ im Visier', C.blue, TL.macro.start - s.a], ['US-JOBS SEPTEMBER', '+29.000', 'Arbeitslosigkeit 4,2 %', C.red, TL.macro.start - s.a + 1.4], ['10-J. US-RENDITE', '5,34 %', 'Schlüssel: unter 5 % halten', C.orange, TL.macro.start - s.a + 2.3]];
+  tiles.forEach(([lab, big, sub, col, at], i) => {
+    const u = eOut(prog(lt, at, at + 0.4)), y = 470 + i * 330;
+    ctx.save(); ctx.translate((1 - u) * W * 0.8, 0);
+    panel(90, y, 900, 290, u, col);
+    text(lab, 140, y + 72, `700 34px ${MONO}`, col, 'left', u);
+    text(big, 140, y + 180, `700 100px ${MONO}`, C.text, 'left', u);
+    text(sub, 140, y + 245, `400 40px ${SANS}`, C.muted, 'left', u);
+    ctx.restore();
+  });
+}
+
+/* ---------- 7: Elliott wave call to action ---------- */
+const EW = [[0, 0.04], [0.16, 0.42], [0.27, 0.24], [0.55, 0.86], [0.66, 0.66], [0.84, 1]];
+function sCTA(t, s) {
+  const lt = t - s.a, X = (u) => lerp(110, 970, u), Y = (v) => lerp(1180, 720, v);
+  const g = ctx.createRadialGradient(W / 2, 900, 0, W / 2, 900, 900); g.addColorStop(0, 'rgba(247,147,26,0.22)'); g.addColorStop(1, 'rgba(247,147,26,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  text('ELLIOTT-WELLEN-ANALYSE', W / 2, 380, `700 44px ${MONO}`, C.hi, 'center', eOut(prog(lt, 0, 0.3)));
+  text('Die Zählung zu BTC', W / 2, 480, `700 76px ${SERIF}`, C.text, 'center', eOut(prog(lt, 0.2, 0.5)));
+  text('mit allen Levels', W / 2, 570, `700 76px ${SERIF}`, C.orange, 'center', eOut(prog(lt, 0.35, 0.65)));
+  // levels appear with the spoken words
+  const zA = eOut(prog(t, TL.cta.start + 1.2, TL.cta.start + 1.5)), tA = eOut(prog(t, TL.cta.start + 1.75, TL.cta.start + 2.05)), iA = eOut(prog(t, TL.cta.start + 2.1, TL.cta.start + 2.4));
+  ctx.globalAlpha = zA; ctx.fillStyle = 'rgba(61,220,132,0.16)'; ctx.fillRect(X(0.2), Y(0.3), (X(0.36) - X(0.2)) * zA, Y(0.18) - Y(0.3)); ctx.globalAlpha = 1;
+  hline(Y(1.08), X(0.4), X(1), C.orange, tA, 4); hline(Y(0.04), X(0), X(1), C.red, iA, 4);
+  const pts = EW.map(([u, v]) => [X(u), Y(v)]);
+  polyline(pts, eInOut(prog(lt, 0.3, 1.6)), C.orange, 10, true);
+  EW.slice(1).forEach(([u, v], i) => {
+    const a = eBack(prog(lt, 0.45 + i * 0.22, 0.7 + i * 0.22)); if (a <= 0) return;
+    ctx.save(); ctx.translate(X(u), Y(v)); ctx.scale(clamp(a), clamp(a));
+    ctx.beginPath(); ctx.arc(0, 0, 13, 0, TAU); ctx.fillStyle = C.bg; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = C.orange; ctx.stroke();
+    text(String(i + 1), 0, i % 2 ? 56 : -28, `700 38px ${MONO}`, C.text, 'center'); ctx.restore();
+  });
+  pill('KAUFZONE', X(0.36) + 130, Y(0.24), C.green, zA, lerp(0.6, 1, zA), false, 30);
+  pill('ZIEL', X(0.5), Y(1.08) - 52, C.orange, tA, lerp(0.6, 1, tA), false, 30);
+  pill('INVALIDIERUNG', X(0.7), Y(0.04) + 58, C.red, iA, lerp(0.6, 1, iA), false, 30);
+  const u = eBack(prog(t, TL.cta.start + 2.6, TL.cta.start + 3.0)), pulse = 1 + 0.035 * Math.sin(lt * 9);
+  ctx.save(); ctx.translate(W / 2, 1360); const sc = lerp(0.6, 1, clamp(u)) * pulse; ctx.scale(sc, sc);
+  ctx.globalAlpha = clamp(u); ctx.beginPath(); ctx.roundRect(-330, -70, 660, 140, 70); ctx.fillStyle = C.orange; ctx.shadowColor = 'rgba(247,147,26,0.8)'; ctx.shadowBlur = 40; ctx.fill(); ctx.shadowBlur = 0;
+  text('apexwave.pro', 0, 22, `700 64px ${MONO}`, '#111', 'center', clamp(u)); ctx.restore(); ctx.globalAlpha = 1;
+  text('LINK IN BIO  →', W / 2, 1480, `700 46px ${MONO}`, C.text, 'center', eOut(prog(t, TL.cta.start + 3.6, TL.cta.start + 3.9)));
+}
+
+/* ---------- compositor ---------- */
+const DRAW = { hook: sHook, ma: sMA, q3: sQ3, hist: sHist, key: sKey, macro: sMacro, cta: sCTA };
+const TINT = { hook: 'orange', ma: 'orange', q3: 'orange', hist: 'blue', key: 'orange', macro: 'blue', cta: 'orange' };
+const TR = 0.32; // transition length
+window.render = (t) => {
+  const i = Math.max(0, SC.findIndex((s) => t >= s.a && t < s.b)), s = SC[i === -1 ? SC.length - 1 : i];
+  background(t, TINT[s.k]);
+  const next = SC[i + 1], into = next ? prog(t, next.a - TR, next.a) : 0;
+  // current scene slides out to the left while the next slides in from the right
+  ctx.save(); ctx.translate(-eInOut(into) * W * 0.35, 0); ctx.globalAlpha = 1; DRAW[s.k](t, s);
+  if (into > 0) { ctx.fillStyle = `rgba(5,7,10,${eInOut(into) * 0.9})`; ctx.fillRect(-W, 0, W * 3, H); }
+  ctx.restore();
+  if (into > 0) { ctx.save(); ctx.translate((1 - eInOut(into)) * W, 0); ctx.globalAlpha = eInOut(into); background(t, TINT[next.k]); DRAW[next.k](next.a + 0.001, next); ctx.restore(); ctx.globalAlpha = 1; }
+  const flash = i > 0 ? Math.max(0, 1 - Math.abs(t - s.a) / 0.08) * 0.12 : 0; if (flash) { ctx.fillStyle = `rgba(255,255,255,${flash})`; ctx.fillRect(0, 0, W, H); }
+  chrome(t);
+};
+window.ready = true;
+</script></body></html>
