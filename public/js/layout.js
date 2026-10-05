@@ -23,14 +23,30 @@ function header() {
       h('a', { class: 'btn sm nav-cta', 'data-route': 'pricing', href: routeUrl('pricing') }, 'Mitgliedschaft')));
 }
 
+// Footer: legal links on the left, social icons on the right, risk notice below. The main menu lives in the header only.
 function footer() {
   return h('div', { class: 'wrap' },
     h('div', { class: 'foot-row' },
-      h('a', { class: 'brand', 'data-route': 'home', href: routeUrl('home') }, h('span', { class: 'brand-mark', 'aria-hidden': 'true' }), h('span', {}, 'Apex Wave ', h('b', {}, 'Capital'))),
-      h('nav', { class: 'foot-nav', 'aria-label': 'Fußzeile' }, NAV.map(([key, label]) => h('a', { 'data-route': key, href: routeUrl(key) }, label)))),
-    h('div', { id: 'foot-social' }),
-    h('nav', { class: 'legal-nav', 'aria-label': 'Rechtliches' }, ['imprint', 'privacy', 'terms', 'cancel'].map((k) => h('a', { 'data-route': k, href: routeUrl(k), class: k === 'cancel' ? 'cancel-link' : null }, { imprint: 'Impressum', privacy: 'Datenschutz', terms: 'AGB', cancel: 'Verträge hier kündigen' }[k]))),
+      h('nav', { class: 'legal-nav', 'aria-label': 'Rechtliches' }, ['imprint', 'privacy', 'terms', 'cancel'].map((k) => h('a', { 'data-route': k, href: routeUrl(k), class: k === 'cancel' ? 'cancel-link' : null }, { imprint: 'Impressum', privacy: 'Datenschutz', terms: 'AGB', cancel: 'Verträge hier kündigen' }[k]))),
+      h('div', { id: 'foot-social' })),
     h('p', { class: 'fineprint' }, 'Marktanalysen zu Bildungszwecken. Keine Anlageberatung, kein Angebot und keine Aufforderung zum Kauf oder Verkauf. Das Live-Depot ist eine Simulation ohne echtes Geld. Trading ist mit erheblichen Verlustrisiken verbunden; vergangene Ergebnisse sind keine Garantie für die Zukunft.'));
+}
+
+// Scroll feedback on every page: a thin progress line under the header and a slimmer header once the page moves.
+function scrollEffects() {
+  const root = document.documentElement, header = document.getElementById('site-header');
+  if (!header) return;
+  header.append(h('div', { class: 'scroll-progress', 'aria-hidden': 'true' }));
+  let ticking = false;
+  const update = () => {
+    ticking = false;
+    const max = root.scrollHeight - innerHeight;
+    root.style.setProperty('--scroll', String(max > 0 ? Math.min(1, scrollY / max) : 0));
+    header.classList.toggle('scrolled', scrollY > 12);
+  };
+  addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+  addEventListener('resize', update, { passive: true });
+  update();
 }
 
 export function setActive(page) {
@@ -80,6 +96,7 @@ async function freeBar() {
 export function mountLayout(page) {
   document.getElementById('site-header')?.replaceChildren(header());
   document.getElementById('site-footer')?.replaceChildren(footer());
+  scrollEffects();
   setActive(page);
   bindLinks(document);
   initReveal(document);

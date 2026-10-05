@@ -12,6 +12,20 @@ const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 mountAtmosphere($('atmo'));
 mountWaveHero($('wave-card'));
 
+// Hero parallax: while the hero scrolls away, the text drifts and fades and the wave card tilts back.
+(() => {
+  const hero = document.querySelector('.hero');
+  if (reduce || !hero) return;
+  let ticking = false;
+  const update = () => {
+    ticking = false;
+    const k = Math.min(1, Math.max(0, scrollY / Math.max(1, hero.offsetHeight)));
+    hero.style.setProperty('--hy', k.toFixed(3));
+  };
+  addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+  update();
+})();
+
 // Rotating asset name under the headline.
 const ASSETS = ['Bitcoin', 'Ethereum', 'Solana', 'Nasdaq', 'S&P 500'];
 if (!reduce) {
