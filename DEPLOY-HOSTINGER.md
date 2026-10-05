@@ -49,7 +49,16 @@ Falls es nicht klappt: `docker compose logs --tail 50` zeigt, was los ist. Meist
 3. KI-Agent: `ANTHROPIC_API_KEY` in `.env` eintragen, `AGENT_PROVIDER=claude` setzen, dann `bash deploy/setup.sh`.
 4. Stripe: siehe `DEPLOY.md`. Die Webhook-Adresse ist `https://apexwave.pro/api/stripe/webhook`.
 
-## Updates einspielen
+## Automatische Updates (einmal einrichten)
+
+```bash
+cd ~/Analysehaus && bash deploy/enable-auto-update.sh
+```
+
+Danach prüft der Server alle 5 Minuten, ob es auf GitHub eine neue Version gibt, und schaltet sie automatisch live.
+Protokoll: `tail /var/log/apexwave-update.log`. Ausschalten: `rm /etc/cron.d/apexwave-update`.
+
+## Updates von Hand einspielen
 
 ```bash
 cd Analysehaus && git pull && bash deploy/setup.sh
