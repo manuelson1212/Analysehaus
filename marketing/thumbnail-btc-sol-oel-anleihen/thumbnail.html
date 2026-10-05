@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Thumbnail BTC SOL Öl Anleihen</title>
+<style>
+/* YouTube thumbnail 1280×720. Variant via ?v=a|b|c. Bottom-right corner (timestamp) stays empty. */
+@font-face { font-family: Anton; src: url(fonts/Anton.woff2) format('woff2'); }
+@font-face { font-family: Archivo; src: url(fonts/ArchivoBlack.woff2) format('woff2'); }
+:root { --bg: #05070a; --text: #f4f6fa; --orange: #f7931a; --hi: #ffc46b; --red: #ff3b3b; --green: #2ee57a; --blue: #4f8cff; }
+html, body { margin: 0; background: #000; }
+#t { position: relative; width: 1280px; height: 720px; overflow: hidden; background: var(--bg); font-family: Anton, sans-serif; color: var(--text); }
+#t > * { position: absolute; }
+.bgsvg { inset: 0; }
+.brand { left: 34px; top: 26px; display: flex; align-items: center; gap: 12px; font: 700 22px "DejaVu Sans Mono", monospace; letter-spacing: 3px; color: #dfe3ea; }
+.brand b { color: var(--orange); }
+.brand svg { width: 38px; height: 38px; }
+.h { line-height: .9; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
+     text-shadow: 0 6px 0 #000, 0 0 30px rgba(0,0,0,.9); -webkit-text-stroke: 3px #000; paint-order: stroke fill; }
+.o { color: var(--orange); }
+.o-grad { background: linear-gradient(180deg, #ffd27a 0%, #f7931a 55%, #d9620a 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+          -webkit-text-stroke: 0; filter: drop-shadow(0 6px 0 #000) drop-shadow(0 0 40px rgba(247,147,26,.55)); text-shadow: none; }
+.chip { font-family: Archivo, sans-serif; font-size: 30px; padding: 8px 18px 10px; border-radius: 10px; letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; box-shadow: 0 8px 24px rgba(0,0,0,.6); }
+.coin { width: var(--s); height: var(--s); filter: drop-shadow(0 14px 22px rgba(0,0,0,.75)); }
+.label { font-family: Archivo, sans-serif; font-size: 30px; text-transform: uppercase; letter-spacing: 1px; text-align: center; white-space: nowrap;
+         -webkit-text-stroke: 6px #000; paint-order: stroke fill; transform: translateX(-50%); }
+</style></head>
+<body><div id="t"></div>
+<script>
+const V = new URLSearchParams(location.search).get('v') || 'a';
+const t = document.getElementById('t');
+const add = (html) => t.insertAdjacentHTML('beforeend', html);
+
+/* ---------- deterministic noise ---------- */
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+/* ---------- icons ---------- */
+const ICON = {
+  btc: `<svg viewBox="0 0 200 200"><defs><radialGradient id="gb" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#ffc163"/><stop offset=".55" stop-color="#f7931a"/><stop offset="1" stop-color="#c25f00"/></radialGradient></defs>
+    <circle cx="100" cy="100" r="96" fill="url(#gb)" stroke="#000" stroke-width="5"/><circle cx="100" cy="100" r="82" fill="none" stroke="#ffd79a" stroke-opacity=".45" stroke-width="3"/>
+    <g transform="rotate(14 100 100)" fill="#fff"><rect x="82" y="34" width="11" height="22" rx="2"/><rect x="104" y="34" width="11" height="22" rx="2"/><rect x="82" y="144" width="11" height="22" rx="2"/><rect x="104" y="144" width="11" height="22" rx="2"/>
+    <text x="102" y="149" text-anchor="middle" font-family="Archivo" font-size="128">B</text></g></svg>`,
+  sol: `<svg viewBox="0 0 200 200"><defs><linearGradient id="gs" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#9945ff"/><stop offset=".5" stop-color="#4f9bf0"/><stop offset="1" stop-color="#14f195"/></linearGradient></defs>
+    <circle cx="100" cy="100" r="96" fill="#0b0b14" stroke="#000" stroke-width="5"/><circle cx="100" cy="100" r="82" fill="none" stroke="url(#gs)" stroke-opacity=".7" stroke-width="4"/>
+    <g fill="url(#gs)"><path d="M62 62h86l-14 16H48z"/><path d="M48 92h86l14 16H62z"/><path d="M62 122h86l-14 16H48z"/></g></svg>`,
+  oil: `<svg viewBox="0 0 200 200"><defs><radialGradient id="go" cx=".4" cy=".3" r=".9"><stop offset="0" stop-color="#3a3f4a"/><stop offset="1" stop-color="#0d0f13"/></radialGradient>
+    <linearGradient id="gd" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2b2b2b"/><stop offset="1" stop-color="#000"/></linearGradient></defs>
+    <circle cx="100" cy="100" r="96" fill="url(#go)" stroke="#000" stroke-width="5"/><circle cx="100" cy="100" r="82" fill="none" stroke="#f7931a" stroke-opacity=".55" stroke-width="3"/>
+    <path d="M100 32 C100 32 54 92 54 122 a46 46 0 0 0 92 0 C146 92 100 32 100 32z" fill="url(#gd)" stroke="#f7931a" stroke-width="4"/>
+    <path d="M78 116 c-2 18 8 30 22 33" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="8" stroke-linecap="round"/></svg>`,
+  bond: `<svg viewBox="0 0 200 200"><defs><radialGradient id="gn" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="#7fb0ff"/><stop offset=".6" stop-color="#2f6be0"/><stop offset="1" stop-color="#173e8f"/></radialGradient></defs>
+    <circle cx="100" cy="100" r="96" fill="url(#gn)" stroke="#000" stroke-width="5"/><circle cx="100" cy="100" r="82" fill="none" stroke="#cfe0ff" stroke-opacity=".45" stroke-width="3"/>
+    <rect x="56" y="44" width="88" height="112" rx="8" fill="#fff" stroke="#000" stroke-width="4"/>
+    <g stroke="#173e8f" stroke-width="7" stroke-linecap="round"><path d="M72 68h56"/><path d="M72 86h56"/><path d="M72 104h34"/></g>
+    <circle cx="122" cy="132" r="16" fill="#f7931a" stroke="#000" stroke-width="4"/><path d="M114 146l-4 16 12-6 12 6-4-16" fill="#f7931a" stroke="#000" stroke-width="3"/></svg>`,
+  logo: `<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="#0b0e14" stroke="#f7931a" stroke-opacity=".5" stroke-width="1.5"/>
+    <path d="M9 27l6-7 4 4 9-11" fill="none" stroke="#f7931a" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="29" cy="12" r="3" fill="#000" stroke="#f7931a" stroke-width="2"/></svg>`,
+};
+const coin = (k, x, y, s, rot = 0) => add(`<div class="coin" style="--s:${s}px;left:${x}px;top:${y}px;transform:rotate(${rot}deg)">${ICON[k]}</div>`);
+const label = (txt, x, y, color = '#fff', size = 30) => add(`<div class="label" style="left:${x}px;top:${y}px;color:${color};font-size:${size}px">${txt}</div>`);
+
+/* ---------- background: glow, grid, faint candles ---------- */
+function background({ glowX = 900, glowY = 330, glow = 'rgba(247,147,26,.30)', trend = 0, candles = true, red = false } = {}) {
+  let g = '';
+  for (let x = 0; x <= 1280; x += 64) g += `<path d="M${x} 0V720" stroke="#ffffff" stroke-opacity=".035"/>`;
+  for (let y = 0; y <= 720; y += 64) g += `<path d="M0 ${y}H1280" stroke="#ffffff" stroke-opacity=".035"/>`;
+  let c = '';
+  if (candles) {
+    let p = 420;
+    for (let i = 0; i < 42; i++) {
+      const x = 20 + i * 30.5, d = (rnd() - .5) * 60 + trend, o = p, cl = p + d, hi = Math.min(o, cl) - rnd() * 28, lo = Math.max(o, cl) + rnd() * 28;
+      const up = cl < o, col = up ? '#2ee57a' : '#ff3b3b';
+      c += `<path d="M${x + 8} ${hi}V${lo}" stroke="${col}" stroke-width="2"/><rect x="${x}" y="${Math.min(o, cl)}" width="16" height="${Math.max(3, Math.abs(d))}" fill="${col}"/>`;
+      p = Math.min(640, Math.max(120, cl));
+    }
+  }
+  add(`<svg class="bgsvg" width="1280" height="720" viewBox="0 0 1280 720">
+    <defs><radialGradient id="glow" cx="${glowX / 1280}" cy="${glowY / 720}" r=".6"><stop offset="0" stop-color="${glow}"/><stop offset="1" stop-color="rgba(0,0,0,0)"/></radialGradient>
+    <radialGradient id="vig" cx=".5" cy=".5" r=".75"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".85"/></radialGradient></defs>
+    ${red ? '<rect width="1280" height="720" fill="#1a0306"/>' : ''}
+    <rect width="1280" height="720" fill="url(#glow)"/>${g}<g opacity=".16">${c}</g><rect width="1280" height="720" fill="url(#vig)"/></svg>`);
+}
+const brand = () => add(`<div class="brand">${ICON.logo}<span>APEX <b>WAVE</b></span></div>`);
+
+/* ---------- variant A: "ALLES HÄNGT AN 5,34 %" (bond yield pulls the strings) ---------- */
+function A() {
+  background({ glowX: 420, glowY: 430, trend: -6 });
+  // strings from the yield to the three assets
+  add(`<svg class="bgsvg" width="1280" height="720" viewBox="0 0 1280 720"><g fill="none" stroke="#f7931a" stroke-width="5" stroke-dasharray="14 10" opacity=".85">
+    <path d="M842 352 C900 352 920 150 1000 140"/><path d="M842 362 C930 362 960 345 1060 345"/><path d="M842 372 C900 372 920 560 990 560"/></g>
+    <circle cx="842" cy="362" r="13" fill="#f7931a" stroke="#000" stroke-width="4"/></svg>`);
+  brand();
+  add(`<div class="h" style="left:44px;top:96px;font-size:104px">ALLES HÄNGT AN</div>`);
+  add(`<div class="h o-grad" style="left:30px;top:214px;font-size:280px;letter-spacing:-2px">5,34%</div>`);
+  add(`<div class="chip" style="left:52px;top:560px;background:#4f8cff;color:#fff;border:4px solid #000">US-Staatsanleihen 10J</div>`);
+  coin('btc', 990, 52, 180, -8);  label('Bitcoin', 1080, 232, '#ffc46b');
+  coin('sol', 1050, 262, 165, 6); label('Solana', 1132, 428, '#b98bff');
+  coin('oil', 980, 470, 165, -4); label('Öl', 1062, 636, '#fff');
+}
+
+/* ---------- variant B: "4 MÄRKTE · 1 SIGNAL" ---------- */
+function B() {
+  background({ glowX: 640, glowY: 260, trend: -10 });
+  brand();
+  const xs = [70, 370, 670, 970], keys = ['btc', 'sol', 'oil', 'bond'], names = ['Bitcoin', 'Solana', 'Öl', 'Anleihen'], cols = ['#ffc46b', '#b98bff', '#fff', '#8fb6ff'];
+  keys.forEach((k, i) => { coin(k, xs[i], 84 + (i % 2) * 26, 230, [-8, 6, -5, 8][i]); label(names[i], xs[i] + 115, 330 + (i % 2) * 26, cols[i], 34); });
+  add(`<div class="h" style="left:0;width:1280px;text-align:center;top:450px;font-size:150px">4 MÄRKTE · <span class="o">1 SIGNAL</span></div>`);
+}
+
+/* ---------- variant C: "KIPPT JETZT ALLES?" ---------- */
+function C() {
+  background({ glowX: 940, glowY: 380, glow: 'rgba(255,40,40,.32)', trend: 14, red: true });
+  // falling chart with arrow
+  add(`<svg class="bgsvg" width="1280" height="720" viewBox="0 0 1280 720"><defs><linearGradient id="fall" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7a7a"/><stop offset="1" stop-color="#ff1f1f"/></linearGradient></defs>
+    <path d="M610 120 L700 170 L750 140 L840 280 L890 250 L990 430 L1040 400 L1130 560" fill="none" stroke="#000" stroke-width="30" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M610 120 L700 170 L750 140 L840 280 L890 250 L990 430 L1040 400 L1130 560" fill="none" stroke="url(#fall)" stroke-width="18" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M1178 640 L1080 610 L1162 524 Z" fill="#ff1f1f" stroke="#000" stroke-width="6" stroke-linejoin="round"/></svg>`);
+  coin('sol', 700, 270, 150, -18);
+  coin('oil', 960, 120, 150, 14);
+  coin('bond', 1080, 300, 140, 20);
+  coin('btc', 760, 400, 230, -14);
+  brand();
+  add(`<div class="h" style="left:40px;top:110px;font-size:190px">KIPPT</div>`);
+  add(`<div class="h" style="left:40px;top:278px;font-size:190px">JETZT</div>`);
+  add(`<div class="h" style="left:28px;top:450px;font-size:190px;background:#ff1f1f;padding:0 18px 6px;border:6px solid #000;transform:rotate(-3deg);box-shadow:0 12px 30px rgba(0,0,0,.7)">ALLES?</div>`);
+}
+
+({ a: A, b: B, c: C })[V]();
+document.fonts.ready.then(() => { window.ready = true; });
+</script></body></html>
