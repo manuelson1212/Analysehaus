@@ -1,11 +1,12 @@
 import { h, imgUrl, detailUrl } from './dom.js';
-import { loc } from './i18n.js';
+import { loc, localized } from './i18n.js';
 
 export const MARKET = { Crypto: 'Krypto', Stocks: 'Aktien' };
 
 const summary = (a) => a.scenario_primary || a.wave_count || a.body.slice(0, 160);
 
-export function card(a) {
+export function card(original) {
+  const a = localized(original);
   return h('a', { class: 'card reveal', href: detailUrl(a.id) },
     h('div', { class: 'thumb-wrap' },
       h('img', { class: 'thumb', src: imgUrl(a.image), alt: `${a.asset} ${a.timeframe} Chart`, loading: 'lazy', decoding: 'async' })),

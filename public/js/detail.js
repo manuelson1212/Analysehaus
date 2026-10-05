@@ -1,5 +1,5 @@
 import { h, api, imgUrl, routeUrl } from './dom.js';
-import { loc } from './i18n.js';
+import { loc, localized } from './i18n.js';
 import { MARKET } from './cards.js';
 
 const root = document.getElementById('root');
@@ -8,7 +8,8 @@ const id = Number(new URLSearchParams(location.search).get('id') || /(\d+)$/.exe
 const field = (label, value, cls) => value
   ? h('div', { class: cls }, h('div', { class: 'label' }, label), h('p', {}, value)) : null;
 
-api(`/api/analyses/${id}`).then((a) => {
+api(`/api/analyses/${id}`).then((original) => {
+  const a = localized(original);
   document.title = `${a.asset} ${a.timeframe} · Apex Wave Capital`;
   root.replaceChildren(
     h('div', { class: 'page-head' },

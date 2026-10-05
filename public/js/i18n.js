@@ -7,6 +7,13 @@ const KEY = 'awc-lang';
 export const lang = () => (document.documentElement.lang === 'en' ? 'en' : 'de');
 export const loc = () => (lang() === 'en' ? 'en-US' : 'de-DE');
 
+// An analysis in the visitor's language: English fields where they exist, otherwise the German original.
+export function localized(a) {
+  if (lang() !== 'en' || !a?.en) return a;
+  const en = Object.fromEntries(Object.entries(a.en).filter(([, v]) => v));
+  return { ...a, ...en };
+}
+
 export function setLang(next) {
   try { localStorage.setItem(KEY, next); } catch { /* private mode: choice lasts for this page only */ }
   location.reload();

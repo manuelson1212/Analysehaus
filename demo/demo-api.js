@@ -137,6 +137,7 @@ function parse(b) {
     invalidation: s(b.invalidation, 500), targets: s(b.targets, 800), fib_levels: s(b.fib_levels, 800), body: s(b.body, 20000),
     tags: [...new Set((b.tags || []).map((t) => String(t).trim().toLowerCase().slice(0, 30)).filter(Boolean))].slice(0, 12),
     status: b.status === 'published' ? 'published' : 'draft',
+    en: Object.fromEntries(['wave_count', 'scenario_primary', 'scenario_alt', 'invalidation', 'targets', 'fib_levels', 'body'].map((k) => [k, s(b.en?.[k], 20000)]).filter(([, v]) => v)),
   };
 }
 

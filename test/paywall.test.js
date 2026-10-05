@@ -187,3 +187,15 @@ test('scripts and styles get versioned URLs so releases are never mixed with cac
   assert.equal(r.status, 200); assert.match(r.headers.get('cache-control'), /immutable/);
   assert.equal((await fetch(B + '/v/abc/../server.js')).status, 404);
 });
+
+test('analyses keep an optional English version, and its member fields are locked like the German ones', async () => {
+  const r = await call(A, '/api/admin/analyses', { method: 'POST', cookie: adminA, body: { asset: 'SOL/USD', market: 'Crypto', timeframe: '1D', analysis_date: '2026-10-05', status: 'published', image: PNG,
+    wave_count: 'Welle 1 fertig', scenario_primary: 'Korrektur', invalidation: 'INVAL-DE', en: { wave_count: 'Wave 1 complete', invalidation: 'INVAL-EN', body: '', junk: 'x' } } });
+  assert.equal(r.status, 201);
+  assert.deepEqual(r.data.en, { wave_count: 'Wave 1 complete', invalidation: 'INVAL-EN' });
+  const { redactAnalysis } = await import('../lib/access.js');
+  const locked = redactAnalysis(r.data, { active: false });
+  assert.equal(locked.en.wave_count, 'Wave 1 complete');
+  assert.equal(locked.en.invalidation, undefined);
+  assert.doesNotMatch(JSON.stringify(locked), /INVAL-/);
+});

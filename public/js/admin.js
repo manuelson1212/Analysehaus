@@ -86,6 +86,17 @@ async function renderForm() {
   drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('over'); setFile(e.dataTransfer.files[0]); });
   document.onpaste = (e) => { const it = [...(e.clipboardData?.files || [])][0]; if (it && current.tab === 'new') setFile(it); };
 
+  // English version: shown to visitors who switch the site to EN; empty fields fall back to the German text.
+  const en = {};
+  const enField = (k, label, rows = 3) => { en[k] = h('textarea', { id: `en-${k}`, rows }, a?.en?.[k] ?? ''); return h('div', { class: 'field' }, h('label', { class: 'label', for: `en-${k}` }, label), en[k]); };
+  const enBox = h('details', { class: 'panel en-box', open: a?.en && Object.keys(a.en).length ? true : null },
+    h('summary', {}, 'English version (optional) – shown when visitors switch the site to EN'),
+    h('p', { class: 'fine' }, 'Leave a field empty to show the German text instead.'),
+    enField('wave_count', 'Wave count (EN)', 2), enField('scenario_primary', 'Primary scenario (EN)'), enField('scenario_alt', 'Alternate scenario (EN)'),
+    enField('invalidation', 'Invalidation level (EN)', 2),
+    h('div', { class: 'two' }, enField('targets', 'Target zones (EN)'), enField('fib_levels', 'Fibonacci levels (EN)')),
+    enField('body', 'Written analysis (EN)', 8));
+
   const market = h('select', { id: 'market' }, ['Crypto', 'Stocks'].map((m) => h('option', { value: m, selected: a?.market === m }, m)));
   const status = h('select', { id: 'status' }, [['draft', 'Draft'], ['published', 'Published']].map(([v, l]) => h('option', { value: v, selected: (a?.status ?? 'published') === v }, l)));
   const date = h('input', { type: 'date', id: 'date', value: a?.analysis_date ?? today(), required: true });
@@ -101,6 +112,7 @@ async function renderForm() {
       invalidation: f.invalidation.value, targets: f.targets.value, fib_levels: f.fib_levels.value, body: f.body.value,
       tags: f.tags.value.split(',').map((t) => t.trim().replace(/^#/, '')).filter(Boolean),
       status: status.value, image: imageData || undefined,
+      en: Object.fromEntries(Object.entries(en).map(([k, el]) => [k, el.value])),
     };
     try {
       const saved = a ? await api(`/api/admin/analyses/${a.id}`, { method: 'PUT', body })
@@ -115,13 +127,14 @@ async function renderForm() {
   h('div', { class: 'two' }, h('div', { class: 'field' }, h('label', { class: 'label', for: 'date' }, 'Analysis date'), date),
     h('div', { class: 'field' }, h('label', { class: 'label', for: 'status' }, 'Status'), status)),
   h('div', { class: 'field' }, h('span', { class: 'label' }, 'Chart screenshot (paste, drop or choose)'), drop, file, preview),
-  input('wave_count', 'Wave count', { placeholder: 'Wave (3) of 3 within a larger impulse' }),
-  area('scenario_primary', 'Primary scenario', 'What you expect to happen next'),
-  area('scenario_alt', 'Alternate scenario', 'What happens if the primary count fails'),
-  input('invalidation', 'Invalidation level', { placeholder: 'Close below 61,200' }),
-  h('div', { class: 'two' }, area('targets', 'Target zones', '68,400 – 70,100'), area('fib_levels', 'Fibonacci levels', '0.618 at 64,250; 1.618 ext at 70,100')),
-  area('body', 'Written analysis', 'Full commentary'),
-  input('tags', 'Tags (comma separated)', { placeholder: 'impulse, btc, wave3', value: a?.tags.join(', ') ?? '' }),
+  input('wave_count', 'Wave count', { placeholder: 'e.g. Wave (3) of 3 within a larger impulse' }),
+  area('scenario_primary', 'Primary scenario', 'e.g. what you expect to happen next'),
+  area('scenario_alt', 'Alternate scenario', 'e.g. what happens if the primary count fails'),
+  input('invalidation', 'Invalidation level', { placeholder: 'e.g. Close below 61,200' }),
+  h('div', { class: 'two' }, area('targets', 'Target zones', 'e.g. 68,400 – 70,100'), area('fib_levels', 'Fibonacci levels', 'e.g. 0.618 at 64,250; 1.618 ext at 70,100')),
+  area('body', 'Written analysis', 'e.g. your full commentary'),
+  input('tags', 'Tags (comma separated)', { placeholder: 'e.g. impulse, btc, wave3', value: a?.tags.join(', ') ?? '' }),
+  enBox,
   msg, h('div', { class: 'row' }, submit,
     a && h('button', { class: 'btn ghost', type: 'button', onclick: () => { current = { tab: 'list', editId: null }; render(); } }, 'Cancel')));
   shell(form);

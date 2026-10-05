@@ -38,7 +38,9 @@ img { max-width: 100%; display: block; }
 .brand:hover { text-decoration: none; }
 .brand-mark { width: 28px; height: 28px; border: 1px solid var(--line-2); border-radius: 6px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'%3E%3Cpath d='M3 21 9 12l4 5 6-12 6 10' fill='none' stroke='%23f7931a' stroke-width='2.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E") center/78% no-repeat, var(--panel); }
 .nav { display: flex; align-items: center; gap: 4px; }
-.nav-link { position: relative; color: var(--muted); font: 500 14px var(--sans); padding: 8px 12px; transition: color .2s; }
+.nav-link { position: relative; color: var(--muted); font: 500 14px var(--sans); padding: 8px 12px; transition: color .2s; white-space: nowrap; }
+.brand { white-space: nowrap; }
+@media (min-width: 861px) and (max-width: 1180px) { .bar { gap: 10px; } .brand { font-size: 13px; letter-spacing: .06em; } .nav { gap: 0; } .nav-link { padding: 8px 8px; font-size: 13.5px; } .nav-link::after { left: 8px; right: 8px; } .bar-right { gap: 10px; } .nav-cta { padding-inline: 10px; } }
 .nav-link::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 2px; height: 2px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform .3s var(--ease); }
 .nav-link:hover, .nav-link.on { color: var(--text); text-decoration: none; }
 .nav-link:hover::after, .nav-link.on::after { transform: scaleX(1); }
@@ -217,6 +219,8 @@ button { font: inherit; color: inherit; }
 @media (min-width: 640px) { .form .two { grid-template-columns: 1fr 1fr; } .form .three { grid-template-columns: 2fr 1fr 1fr; } }
 .field { display: grid; gap: 6px; }
 .panel.form { padding: 26px; }
+.en-box summary { cursor: pointer; font: 700 13px var(--mono); color: var(--accent); }
+.en-box[open] summary { margin-bottom: 12px; } .en-box .field + .field, .en-box .two { margin-top: 12px; }
 .drop { border: 1px dashed var(--line-2); border-radius: var(--radius); padding: 24px; text-align: center; color: var(--muted); cursor: pointer; font: 13px var(--mono); transition: all .2s; }
 .drop.over, .drop:hover { border-color: var(--accent); color: var(--accent); }
 .preview { max-height: 260px; margin-top: 10px; border: 1px solid var(--line); border-radius: var(--radius); }
