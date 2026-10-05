@@ -8,6 +8,8 @@ Drei Varianten für den A/B-Test in YouTube Studio („Testen und vergleichen“
 | `thumbnail-b.png` | „4 MÄRKTE · 1 SIGNAL“: alle vier Märkte nebeneinander |
 | `thumbnail-c.png` | „KIPPT JETZT ALLES?“: fallender Chart, roter Hintergrund |
 
+Beschreibung, Titel und Tags fürs Video: `beschreibung.md`.
+
 Die 5,34 % stammen aus der Tagesanalyse vom 05.10.2026. Die rechte untere Ecke bleibt frei, weil dort die Videolänge steht.
 
 ## Neu bauen
