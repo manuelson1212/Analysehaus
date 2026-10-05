@@ -18,7 +18,7 @@ function footer() {
   return h('div', { class: 'wrap' },
     h('div', { class: 'foot-row' },
       h('a', { class: 'brand', 'data-route': 'home', href: routeUrl('home') }, h('span', { class: 'brand-mark', 'aria-hidden': 'true' }), h('span', {}, 'Apex Wave ', h('b', {}, 'Capital'))),
-      h('nav', { class: 'foot-nav', 'aria-label': 'Fußzeile' }, NAV.map(([key, label]) => h('a', { 'data-route': key, href: routeUrl(key) }, label)), h('a', { 'data-route': 'admin', href: routeUrl('admin') }, 'Admin'))),
+      h('nav', { class: 'foot-nav', 'aria-label': 'Fußzeile' }, NAV.map(([key, label]) => h('a', { 'data-route': key, href: routeUrl(key) }, label)))),
     h('div', { id: 'foot-social' }),
     h('nav', { class: 'legal-nav', 'aria-label': 'Rechtliches' }, ['imprint', 'privacy', 'terms', 'cancel'].map((k) => h('a', { 'data-route': k, href: routeUrl(k), class: k === 'cancel' ? 'cancel-link' : null }, { imprint: 'Impressum', privacy: 'Datenschutz', terms: 'AGB', cancel: 'Verträge hier kündigen' }[k]))),
     h('p', { class: 'fineprint' }, 'Marktanalysen zu Bildungszwecken. Keine Anlageberatung, kein Angebot und keine Aufforderung zum Kauf oder Verkauf. Das Live-Depot ist eine Simulation ohne echtes Geld. Trading ist mit erheblichen Verlustrisiken verbunden; vergangene Ergebnisse sind keine Garantie für die Zukunft.'));

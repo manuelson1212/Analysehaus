@@ -449,7 +449,7 @@ const server = createServer(async (req, res) => {
     if (isHttps(req)) res.setHeader('Strict-Transport-Security', 'max-age=31536000');
     if (url.pathname === '/healthz') { db.prepare('SELECT 1').get(); return send(res, 200, 'ok', { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store' }); }
     if (url.pathname === '/robots.txt') {
-      return send(res, 200, `User-agent: *\nDisallow: /admin\nDisallow: /api/\nSitemap: ${publicUrl(req)}/sitemap.xml\n`, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=3600' });
+      return send(res, 200, `User-agent: *\nDisallow: /api/\nSitemap: ${publicUrl(req)}/sitemap.xml\n`, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=3600' });
     }
     if (url.pathname === '/sitemap.xml') {
       const base = publicUrl(req);
