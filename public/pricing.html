@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Preise · Apex Wave Capital</title>
-  <meta name="description" content="Die ersten 30 Tage kostenlos, danach eine einfache monatliche Mitgliedschaft.">
+  <meta name="description" content="Die ersten 30 Tage kostenlos, danach 5,99 € im Monat für alle Analysen, Live-Charts und das Live-Depot.">
   <meta property="og:site_name" content="Apex Wave Capital">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Preise · Apex Wave Capital">
-  <meta property="og:description" content="Die ersten 30 Tage kostenlos, danach eine einfache monatliche Mitgliedschaft.">
+  <meta property="og:description" content="Die ersten 30 Tage kostenlos, danach 5,99 € im Monat für alle Analysen, Live-Charts und das Live-Depot.">
   <meta property="og:image" content="%PUBLIC_URL%/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -28,30 +28,31 @@
   <main id="main">
     <section class="wrap page-head center">
       <p class="eyebrow">Preise</p>
-      <h1>30 Tage kostenlos. Danach einfach.</h1>
-      <p class="lede">Die ersten 30 Tage sind kostenlos, damit du alles testen und uns sagen kannst, was wir verbessern sollen. Danach ist die Mitgliedschaft kostenpflichtig.</p>
+      <h1>Eine Mitgliedschaft. Alles drin.</h1>
+      <p class="lede" id="pricing-lede">Die ersten 30 Tage sind kostenlos. Danach 5,99 € im Monat, monatlich kündbar.</p>
       <div class="notice small" id="pay-note">Zahlungen sind noch nicht freigeschaltet.</div>
     </section>
-    <section class="wrap plans two">
-      <article class="plan reveal">
-        <h3>Öffentlich</h3><p class="muted">Immer kostenlos.</p>
-        <p class="price"><b>0</b><span>€</span></p>
-        <ul class="ticks"><li>Chart, Wellenzählung und Hauptszenario jeder Analyse</li><li>Die komplette Erfolgsbilanz: jeder abgeschlossene Call mit Nachweis und Trefferquote</li></ul>
-        <a class="btn ghost block" data-route="analyses" href="/analyses">Analysen ansehen</a>
-      </article>
+    <section class="wrap plans one">
       <article class="plan featured reveal">
-        <span class="ribbon">Erste 30 Tage kostenlos</span>
-        <h3>Mitglied</h3><p class="muted">Alle Details jeder Analyse.</p>
-        <p class="price"><b id="price">29</b><span>€ pro Monat nach dem kostenlosen Zeitraum</span></p>
+        <span class="ribbon" id="ribbon">Erste 30 Tage kostenlos</span>
+        <h3>Mitgliedschaft</h3><p class="muted">Voller Zugang zu allen Analysen.</p>
+        <p class="price"><b id="price">5,99 €</b><span>pro Monat</span></p>
+        <p class="fine" id="free-note">Bis zum Ende der Startphase kostenlos, ohne Zahlungsdaten.</p>
         <p class="fine" id="vat-note">Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.</p>
-        <ul class="ticks"><li>Alternativszenario, Ziele, Fibonacci-Level und Invalidierung jeder Analyse</li><li>Die vollständige schriftliche Analyse</li><li>Kaufzonen, Stops und Ziele laufender Depot-Positionen</li></ul>
-        <a class="btn block" data-route="account" href="/account">Konto erstellen</a>
-        <p class="fine">Kostenloser Zugang bis zum Ende der Startphase. Danach brauchen die Details eine Mitgliedschaft. Monatlich kündbar.</p>
+        <ul class="ticks">
+          <li>Alle schriftlichen Analysen mit Wellenzählung, Haupt- und Alternativszenario</li>
+          <li>Alle Zielzonen, Fibonacci-Level und Invalidierungen</li>
+          <li>Live-Charts zu Bitcoin, Ethereum, Solana, Nasdaq 100 und S&amp;P 500</li>
+          <li>Das Live-Depot mit Kaufzonen, Stops, Zielen und Nachweisen</li>
+          <li>Neue Analysen sofort nach Veröffentlichung</li>
+        </ul>
+        <a class="btn block lg" data-route="account" href="/account" id="plan-cta">Jetzt kostenlos starten</a>
+        <p class="fine">Monatlich kündbar, auch über „Verträge hier kündigen“ unten auf jeder Seite.</p>
       </article>
     </section>
     <section class="section wrap narrow">
       <div class="section-head reveal"><h2>Häufige Fragen</h2></div>
-      <details class="faq reveal"><summary>Was passiert nach dem kostenlosen Zeitraum?</summary><p>Die öffentlichen Inhalte bleiben kostenlos. Für die Details brauchst du eine Mitgliedschaft. Du zahlst nur, wenn du selbst ein Abo abschließt.</p></details>
+      <details class="faq reveal"><summary>Was passiert nach dem kostenlosen Zeitraum?</summary><p>Danach brauchst du eine bezahlte Mitgliedschaft, um die Analysen weiter zu sehen. Du zahlst nur, wenn du selbst ein Abo abschließt – ohne Abo endet dein Zugang einfach, ohne Kosten.</p></details>
       <details class="faq reveal"><summary>Kann ich jederzeit kündigen?</summary><p>Ja, monatlich zum Ende des Abrechnungszeitraums: in deinem Konto unter „Abo verwalten“ oder über „Verträge hier kündigen“ unten auf jeder Seite.</p></details>
       <details class="faq reveal"><summary>Ist das eine Anlageberatung?</summary><p>Nein. Alle Inhalte sind Marktanalysen zu Bildungszwecken. Das Live-Depot ist eine Simulation ohne echtes Geld.</p></details>
     </section>

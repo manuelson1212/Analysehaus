@@ -1,10 +1,11 @@
 import { h, api, bindLinks } from './dom.js';
-import { loc } from './i18n.js';
+import { loc, eur, lang } from './i18n.js';
 import { mountAtmosphere } from './atmosphere.js';
 import { mountWaveHero } from './wave-hero.js';
 import { socialLinks } from './social.js';
 import { card } from './cards.js';
 import { depotTable } from './depot-ui.js';
+import { paywall } from './paywall.js';
 
 const $ = (id) => document.getElementById(id);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -83,11 +84,14 @@ config.then((c) => {
     $('free-pill').textContent = c.days_left > 0 ? `Die ersten 30 Tage kostenlos · noch ${c.days_left} Tage` : 'Die Mitgliedschaft ist jetzt kostenpflichtig';
   }
   if (c.price != null) {
-    $('price-after').textContent = `${c.price} €`;
-    $('faq-price').textContent = `Die ersten 30 Tage sind kostenlos und ohne Zahlungsdaten. Danach kostet die Mitgliedschaft ${c.price} € im Monat${c.small_business ? ' (gemäß § 19 UStG ohne Umsatzsteuer)' : ''}. Chart, Wellenzählung und die komplette Erfolgsbilanz bleiben immer öffentlich.`;
+    $('price-after').textContent = eur(c.price);
+    const until = new Date(c.free_until).toLocaleDateString(loc()), vat = c.small_business;
+    $('faq-price').textContent = lang() === 'en'
+      ? `${c.days_left > 0 ? `Everything is free until ${until}, without payment details.` : 'Membership is paid.'} Membership costs ${eur(c.price)} per month${vat ? ' (no VAT under § 19 UStG)' : ''} and you can cancel monthly.`
+      : `${c.days_left > 0 ? `Bis ${until} ist alles kostenlos, ohne Zahlungsdaten.` : 'Die Mitgliedschaft ist kostenpflichtig.'} Sie kostet ${eur(c.price)} im Monat${vat ? ' (gemäß § 19 UStG ohne Umsatzsteuer)' : ''} und ist monatlich kündbar.`;
   }
   const p = c.profile || {};
-  $('about-text').textContent = p.about || 'Ich analysiere Bitcoin, Ethereum und Solana sowie Nasdaq und S&P 500 nach der klassischen Elliott-Wellen-Methode von Prechter und Frost. Mein Grundsatz: Jede Analyse nennt vorher die Kaufzone, das Ziel und das Level, an dem ich falsch liege. Und jeder Call landet öffentlich im Depot, auch die, die nicht aufgehen.';
+  $('about-text').textContent = p.about || 'Ich analysiere Bitcoin, Ethereum und Solana sowie Nasdaq und S&P 500 nach der klassischen Elliott-Wellen-Methode von Prechter und Frost. Mein Grundsatz: Jede Analyse nennt vorher die Kaufzone, das Ziel und das Level, an dem ich falsch liege. Und jeder Call landet im Live-Depot, auch die, die nicht aufgehen.';
   const links = socialLinks(p);
   $('about-social').replaceChildren(...(links ? [h('p', { class: 'label' }, 'Folge mir für neue Analysen'), links] : []));
   if (window.__AVATAR__) $('about-avatar').src = window.__AVATAR__;
@@ -101,11 +105,13 @@ Promise.all([api('/api/analyses'), config]).then(([all, c]) => {
   window.__layout?.initReveal(latest);
 }).catch(() => $('latest').replaceChildren(h('div', { class: 'empty' }, 'Analysen konnten nicht geladen werden.')));
 
-api('/api/depot').then(({ positions, stats }) => {
+api('/api/depot').then((d) => {
+  const { positions, stats } = d;
   if (stats.closed) setCount($('rate'), stats.hit_rate, '%'); else $('rate').textContent = '–';
   $('rate-sub').textContent = stats.closed ? `Trefferquote · ${stats.hits} von ${stats.closed} abgeschlossenen Calls` : 'Trefferquote · erscheint nach den ersten abgeschlossenen Calls';
   setCount($('n-open'), stats.open);
-  $('depot-preview').replaceChildren(positions.length ? depotTable(positions.slice(0, 5), { compact: true })
+  $('depot-preview').replaceChildren(d.locked ? paywall(d.count ? `${d.count} Positionen im Live-Depot – nur für Mitglieder` : 'Das Live-Depot ist nur für Mitglieder', { compact: true })
+    : positions.length ? depotTable(positions.slice(0, 5), { compact: true })
     : emptyState('Die ersten Positionen werden gerade eingetragen.', 'Hier siehst du gleich jede Kaufzone mit Stop und Ziel, bevor der Kurs dort ist.'));
 }).catch(() => $('depot-preview').replaceChildren(h('div', { class: 'empty' }, 'Das Depot konnte nicht geladen werden.')));
 

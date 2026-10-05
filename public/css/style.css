@@ -157,6 +157,13 @@ button { font: inherit; color: inherit; }
 .save { color: var(--up); margin-left: 6px; }
 .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 18px; align-items: stretch; }
 .plans.two { max-width: 860px; margin-inline: auto; }
+.plans.one { max-width: 520px; margin-inline: auto; grid-template-columns: 1fr; }
+.paywall { display: grid; justify-items: center; gap: 10px; text-align: center; padding: clamp(28px, 5vw, 48px) 20px; border: 1px solid #5a3b0b; border-radius: 14px; background: radial-gradient(500px circle at 50% 0%, rgba(247, 147, 26, .12), transparent 70%), var(--panel); }
+.paywall b { font: 600 22px var(--serif); } .paywall p { margin: 0; } .paywall .ticks { text-align: left; margin: 6px 0 4px; flex: none; }
+.paywall.compact { padding: 28px 18px; } .panel > .paywall, .tv-box > .paywall { border: 0; height: 100%; align-content: center; }
+.lock-ico { font-size: 28px; line-height: 1; }
+.card.locked .lock-thumb { display: grid; place-content: center; justify-items: center; gap: 8px; color: var(--muted); font: 600 13px var(--mono); background: repeating-linear-gradient(135deg, rgba(247,147,26,.05) 0 14px, transparent 14px 28px), linear-gradient(180deg, #111a28, #090d14); }
+.detail-lock { padding-bottom: 64px; max-width: 720px; }
 .plan { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 30px 26px; display: flex; flex-direction: column; gap: 4px; transition: transform .3s var(--ease), border-color .3s, box-shadow .3s; }
 .plan:hover { transform: translateY(-8px); border-color: var(--line-2); }
 .plan.featured { border-color: var(--accent); background: linear-gradient(180deg, #1a1208, var(--panel)); box-shadow: 0 30px 90px -40px rgba(247, 147, 26, .6); }
@@ -232,7 +239,7 @@ button { font: inherit; color: inherit; }
 .table .actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .scroll-x { overflow-x: auto; }
 .studio, .inbox { display: grid; gap: 20px; padding-bottom: 56px; }
-.block { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; }
+.block:not(.btn) { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; }
 .msg-body { white-space: pre-wrap; margin: 0; }
 .scene { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
 .slides { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }

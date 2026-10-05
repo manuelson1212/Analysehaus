@@ -41,29 +41,32 @@ async function seed(base, adminCookie) {
   return a.data.id;
 }
 
-test('free period shows everything; after it ends details are members-only', async () => {
+test('guests only get a teaser; an account unlocks everything during the free period; afterwards members only', async () => {
   const id = await seed(A, adminA);
+  // guest: no chart, no wave count, no text
   let r = await call(A, `/api/analyses/${id}`);
-  assert.equal(r.data.locked, false); assert.equal(r.data.targets, 'TARGET-SECRET');
+  assert.equal(r.data.locked, true); assert.equal(r.data.asset, 'BTC/USD'); assert.equal(r.data.image, null);
+  for (const k of ['wave_count', 'scenario_primary', 'scenario_alt', 'invalidation', 'targets', 'fib_levels', 'body']) assert.equal(r.data[k], '', k);
+  assert.doesNotMatch(JSON.stringify((await call(A, '/api/analyses')).data), /SECRET|Wave 3|\.png|\.webp/);
 
-  await call(A, '/api/admin/config', { method: 'PUT', cookie: adminA, body: { free_until: '2020-01-01', price: 29 } });
-  r = await call(A, `/api/analyses/${id}`);
-  assert.equal(r.data.locked, true);
-  for (const k of ['scenario_alt', 'invalidation', 'targets', 'fib_levels', 'body']) assert.equal(r.data[k], '', k);
-  assert.equal(r.data.wave_count, 'Wave 3'); assert.equal(r.data.scenario_primary, 'Up');
-  assert.doesNotMatch(JSON.stringify((await call(A, '/api/analyses')).data), /SECRET/);
+  // free period + account: full access
+  const reg = await call(A, '/api/account/register', { method: 'POST', body: { email: 'early@example.com', password: 'correct-horse-1', accept_terms: true } });
+  r = await call(A, `/api/analyses/${id}`, { cookie: reg.cookie });
+  assert.equal(r.data.locked, false); assert.equal(r.data.targets, 'TARGET-SECRET'); assert.ok(r.data.image);
 
+  // after the free period the same account is locked again
+  await call(A, '/api/admin/config', { method: 'PUT', cookie: adminA, body: { free_until: '2020-01-01', price: 5.99 } });
+  assert.equal((await call(A, `/api/analyses/${id}`, { cookie: reg.cookie })).data.locked, true);
   // admin still sees everything
   assert.equal((await call(A, `/api/analyses/${id}`, { cookie: adminA })).data.targets, 'TARGET-SECRET');
+  assert.equal((await call(A, '/api/config')).data.price, 5.99);
 });
 
-test('depot: closed calls stay public, running positions hide their levels', async () => {
+test('depot: positions are members-only, the statistics stay public', async () => {
   const d = (await call(A, '/api/depot')).data;
-  assert.equal(d.locked, true);
-  const open = d.positions.find((p) => p.status === 'open'), hit = d.positions.find((p) => p.status === 'hit');
-  assert.deepEqual([open.locked, open.buy_low, open.stop, open.target], [true, null, null, null]);
-  assert.deepEqual([hit.locked, hit.buy_low, hit.target, hit.result], [false, 100, 120, 17.65]);
+  assert.equal(d.locked, true); assert.deepEqual(d.positions, []); assert.equal(d.count, 2);
   assert.equal(d.stats.hit_rate, 100);
+  assert.equal((await call(A, '/api/depot', { cookie: adminA })).data.positions.length, 2);
 });
 
 test('accounts: validation, register, login, wrong password, duplicate', async () => {
@@ -89,8 +92,9 @@ test('admin can grant free access; member then sees details', async () => {
   const login = await call(A, '/api/account/login', { method: 'POST', body: { email: 'member@example.com', password: 'correct-horse-1' } });
   assert.equal((await call(A, `/api/analyses/${id}`, { cookie: login.cookie })).data.locked, true);
   const list = (await call(A, '/api/admin/users', { cookie: adminA })).data;
-  assert.equal(list.length, 1); assert.ok(!('pw_hash' in list[0]));
-  await call(A, `/api/admin/users/${list[0].id}`, { method: 'PUT', cookie: adminA, body: { comped: true } });
+  const member = list.find((u) => u.email === 'member@example.com');
+  assert.ok(member); assert.ok(list.every((u) => !('pw_hash' in u)));
+  await call(A, `/api/admin/users/${member.id}`, { method: 'PUT', cookie: adminA, body: { comped: true } });
   const r = await call(A, `/api/analyses/${id}`, { cookie: login.cookie });
   assert.equal(r.data.locked, false); assert.equal(r.data.targets, 'TARGET-SECRET');
   assert.equal((await call(A, '/api/depot', { cookie: login.cookie })).data.positions.find((p) => p.status === 'open').buy_low, 100);
@@ -188,14 +192,13 @@ test('scripts and styles get versioned URLs so releases are never mixed with cac
   assert.equal((await fetch(B + '/v/abc/../server.js')).status, 404);
 });
 
-test('analyses keep an optional English version, and its member fields are locked like the German ones', async () => {
+test('analyses keep an optional English version, which is locked like the German text', async () => {
   const r = await call(A, '/api/admin/analyses', { method: 'POST', cookie: adminA, body: { asset: 'SOL/USD', market: 'Crypto', timeframe: '1D', analysis_date: '2026-10-05', status: 'published', image: PNG,
     wave_count: 'Welle 1 fertig', scenario_primary: 'Korrektur', invalidation: 'INVAL-DE', en: { wave_count: 'Wave 1 complete', invalidation: 'INVAL-EN', body: '', junk: 'x' } } });
   assert.equal(r.status, 201);
   assert.deepEqual(r.data.en, { wave_count: 'Wave 1 complete', invalidation: 'INVAL-EN' });
   const { redactAnalysis } = await import('../lib/access.js');
   const locked = redactAnalysis(r.data, { active: false });
-  assert.equal(locked.en.wave_count, 'Wave 1 complete');
-  assert.equal(locked.en.invalidation, undefined);
+  assert.deepEqual(locked.en, {});
   assert.doesNotMatch(JSON.stringify(locked), /INVAL-/);
 });

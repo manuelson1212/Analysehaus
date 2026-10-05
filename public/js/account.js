@@ -1,5 +1,5 @@
 import { h, api, routeUrl } from './dom.js';
-import { loc } from './i18n.js';
+import { loc, eur, lang } from './i18n.js';
 
 const root = document.getElementById('account');
 const changed = () => window.dispatchEvent(new Event('account-changed'));
@@ -30,7 +30,9 @@ function statusText(d) {
   if (access.reason === 'free_period') return { title: 'Kostenloser Zugang', text: `Bis ${new Date(config.free_until).toLocaleDateString(loc())} ist alles frei (noch ${config.days_left} Tage). Danach brauchen die Details eine Mitgliedschaft.` };
   if (access.reason === 'comped') return { title: 'Kostenloser Zugang freigeschaltet', text: 'Dein Konto hat kostenlosen Zugang zu allen Details.' };
   if (access.reason === 'member') return { title: 'Aktive Mitgliedschaft', text: user.sub_period_end ? `Der aktuelle Zeitraum endet am ${new Date(user.sub_period_end).toLocaleDateString(loc())}.` : 'Danke für deine Unterstützung.' };
-  return { title: 'Keine aktive Mitgliedschaft', text: `Chart, Wellenzählung und die Erfolgsbilanz sind öffentlich. Eine Mitgliedschaft (${config.price} € pro Monat) schaltet alle Details frei.` };
+  return { title: 'Keine aktive Mitgliedschaft', text: lang() === 'en'
+    ? `A membership (${eur(config.price)} per month) unlocks all analyses, target zones, live charts and the live portfolio.`
+    : `Eine Mitgliedschaft (${eur(config.price)} pro Monat) schaltet alle Analysen, Zielzonen, Live-Charts und das Live-Depot frei.` };
 }
 
 async function loggedIn(d) {
@@ -45,7 +47,7 @@ async function loggedIn(d) {
   // Consumer law (DE): explicit consent to start before the withdrawal period ends, and an unambiguous order button.
   const waiver = h('input', { type: 'checkbox', id: 'waiver' });
   const waiverBox = h('label', { class: 'check', for: 'waiver' }, waiver, h('span', {}, 'Ich verlange ausdrücklich, dass Apex Wave Capital vor Ablauf der Widerrufsfrist mit der Bereitstellung der Inhalte beginnt. Mir ist bekannt, dass ich dadurch mein Widerrufsrecht verliere.'));
-  const subLabel = `Zahlungspflichtig abonnieren · ${d.config.price} € / Monat`;
+  const subLabel = lang() === 'en' ? `Subscribe with obligation to pay · ${eur(d.config.price)} / month` : `Zahlungspflichtig abonnieren · ${eur(d.config.price)} / Monat`;
   const subscribe = h('button', { class: 'btn lg', onclick: () => {
     if (!waiver.checked) return out.replaceChildren(notice('err', 'Bitte bestätige zuerst den Hinweis zum Widerrufsrecht.'));
     go('/api/account/checkout', subLabel, subscribe, { waiver: true });
@@ -65,7 +67,7 @@ async function loggedIn(d) {
     h('div', { class: 'page-head' }, h('p', { class: 'eyebrow' }, 'Konto'), h('h1', {}, user.email)),
     success && notice('ok', 'Danke! Deine Mitgliedschaft wird in etwa einer Minute aktiv. Diese Seite aktualisiert sich automatisch.'),
     h('div', { class: 'panel acc-card' },
-      h('div', { class: 'row' }, h('h2', {}, st.title), h('span', { class: `badge ${access.active ? 'pub' : ''}` }, access.active ? 'Zugang: voll' : 'Zugang: öffentlich')),
+      h('div', { class: 'row' }, h('h2', {}, st.title), h('span', { class: `badge ${access.active ? 'pub' : ''}` }, access.active ? 'Zugang: voll' : 'Zugang: gesperrt')),
       h('p', { class: 'muted' }, st.text),
       h('div', { class: 'row' },
         !['member', 'comped'].includes(access.reason) && (payments_enabled ? h('div', { class: 'sub-box' }, waiverBox, subscribe, h('p', { class: 'fine' }, 'Monatlich kündbar zum Ende des Abrechnungszeitraums, auch über „Verträge hier kündigen“ im Footer.', d.config.small_business ? ' Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.' : '')) : h('p', { class: 'muted' }, 'Mitgliedschaften starten bald. Zahlungen sind noch nicht freigeschaltet.')),

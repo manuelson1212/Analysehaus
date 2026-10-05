@@ -52,8 +52,8 @@ export const EN = {
   'Analysen konnten nicht geladen werden.': 'Analyses could not be loaded.', 'Das Depot konnte nicht geladen werden.': 'The portfolio could not be loaded.',
   'Hinter Apex Wave Capital': 'Behind Apex Wave Capital', 'Klare Zählung. Klare Level. Keine Ausreden.': 'Clear count. Clear levels. No excuses.',
   'Apex Wave Capital Logo': 'Apex Wave Capital logo',
-  'Ich analysiere Bitcoin, Ethereum und Solana sowie Nasdaq und S&P 500 nach der klassischen Elliott-Wellen-Methode von Prechter und Frost. Mein Grundsatz: Jede Analyse nennt vorher die Kaufzone, das Ziel und das Level, an dem ich falsch liege. Und jeder Call landet öffentlich im Depot, auch die, die nicht aufgehen.':
-    'I analyze Bitcoin, Ethereum and Solana as well as the Nasdaq and the S&P 500 using the classic Elliott wave method of Prechter and Frost. My rule: every analysis names the buy zone, the target and the level at which I am wrong up front. And every call goes into the public portfolio, including the ones that do not work out.',
+  'Ich analysiere Bitcoin, Ethereum und Solana sowie Nasdaq und S&P 500 nach der klassischen Elliott-Wellen-Methode von Prechter und Frost. Mein Grundsatz: Jede Analyse nennt vorher die Kaufzone, das Ziel und das Level, an dem ich falsch liege. Und jeder Call landet im Live-Depot, auch die, die nicht aufgehen.':
+    'I analyze Bitcoin, Ethereum and Solana as well as the Nasdaq and the S&P 500 using the classic Elliott wave method of Prechter and Frost. My rule: every analysis names the buy zone, the target and the level at which I am wrong up front. And every call goes into the live portfolio, including the ones that do not work out.',
   Fragen: 'Questions', 'Häufige Fragen': 'Frequently asked questions',
   'Was ist die Elliott-Wellen-Methode?': 'What is the Elliott wave method?',
   'Eine Methode der Chartanalyse, die Kursbewegungen in wiederkehrende Muster einteilt: fünf Wellen in Trendrichtung (1 bis 5) und drei Wellen dagegen (A, B, C). Ich arbeite nach den klassischen Regeln von Prechter und Frost.':
@@ -91,6 +91,30 @@ export const EN = {
   'Analyse nicht gefunden.': 'Analysis not found.', 'Zurück zu den Analysen': 'Back to the analyses',
   'Analyse · Apex Wave Capital': 'Analysis · Apex Wave Capital',
   'Elliott-Wellen-Analyse mit Wellenzählung, Szenarien, Zielen und Invalidierung.': 'Elliott wave analysis with wave count, scenarios, targets and invalidation.',
+
+  // Membership and paywall
+  'Alle schriftlichen Analysen mit Wellenzählung und Szenarien': 'All written analyses with wave count and scenarios',
+  'Alle Zielzonen, Fibonacci-Level und Invalidierungen': 'All target zones, Fibonacci levels and invalidations',
+  'Live-Charts zu BTC, ETH, SOL, Nasdaq und S&P 500': 'Live charts of BTC, ETH, SOL, Nasdaq and S&P 500',
+  'Das Live-Depot mit Kaufzonen, Stops und Zielen': 'The live portfolio with buy zones, stops and targets',
+  'Mitgliedschaft wird geladen…': 'Loading membership…', 'Jetzt kostenlos freischalten': 'Unlock for free now', 'Mitglied werden': 'Become a member',
+  'Diese Analyse ist nur für Mitglieder': 'This analysis is for members only', 'Das Live-Depot ist nur für Mitglieder': 'The live portfolio is for members only',
+  'Wellenzählung, Zielzonen und Invalidierung – jetzt kostenlos freischalten.': 'Wave count, target zones and invalidation – unlock for free now.',
+  'Zugang: gesperrt': 'Access: locked',
+  'Leg ein Konto an und du siehst sofort alle Analysen, Zielzonen, Live-Charts und das Live-Depot. Danach kostet die Mitgliedschaft': 'Create an account and you instantly see all analyses, target zones, live charts and the live portfolio. After that, membership costs',
+  'im Monat, monatlich kündbar.': 'per month, cancel monthly.',
+  'Die ersten 30 Tage sind kostenlos und ohne Zahlungsdaten. Danach kostet die Mitgliedschaft 5,99 € im Monat und ist monatlich kündbar.': 'The first 30 days are free, without payment details. After that, membership costs €5.99 per month and you can cancel monthly.',
+  'Eine Mitgliedschaft. Alles drin.': 'One membership. Everything included.',
+  'Die ersten 30 Tage sind kostenlos. Danach 5,99 € im Monat, monatlich kündbar.': 'The first 30 days are free. After that €5.99 per month, cancel monthly.',
+  'Voller Zugang zu allen Analysen.': 'Full access to all analyses.', 'pro Monat': 'per month',
+  'Bis zum Ende der Startphase kostenlos, ohne Zahlungsdaten.': 'Free until the end of the launch phase, no payment details needed.',
+  'Alle schriftlichen Analysen mit Wellenzählung, Haupt- und Alternativszenario': 'All written analyses with wave count, primary and alternate scenario',
+  'Live-Charts zu Bitcoin, Ethereum, Solana, Nasdaq 100 und S&P 500': 'Live charts of Bitcoin, Ethereum, Solana, Nasdaq 100 and S&P 500',
+  'Das Live-Depot mit Kaufzonen, Stops, Zielen und Nachweisen': 'The live portfolio with buy zones, stops, targets and proof',
+  'Neue Analysen sofort nach Veröffentlichung': 'New analyses as soon as they are published',
+  'Jetzt kostenlos starten': 'Start for free now', 'Monatlich kündbar, auch über „Verträge hier kündigen“ unten auf jeder Seite.': 'Cancel monthly, also via "Cancel contracts here" at the bottom of every page.',
+  'Danach brauchst du eine bezahlte Mitgliedschaft, um die Analysen weiter zu sehen. Du zahlst nur, wenn du selbst ein Abo abschließt – ohne Abo endet dein Zugang einfach, ohne Kosten.': 'After that you need a paid membership to keep seeing the analyses. You only pay if you subscribe yourself – without a subscription your access simply ends, at no cost.',
+  'Die ersten 30 Tage kostenlos, danach 5,99 € im Monat für alle Analysen, Live-Charts und das Live-Depot.': 'The first 30 days free, then €5.99 per month for all analyses, live charts and the live portfolio.',
 
   // Markets
   Märkte: 'Markets', 'Märkte · Apex Wave Capital': 'Markets · Apex Wave Capital',
@@ -236,6 +260,8 @@ export const EN = {
 
 const n = (s) => s; // numbers and dates are already formatted for the current language by the scripts
 export const RULES = [
+  [/^(\d+) Positionen im Live-Depot – nur für Mitglieder$/, '$1 positions in the live portfolio – members only'],
+  [/^(.+) Live-Chart – nur für Mitglieder$/, '$1 live chart – members only'],
   [/^(.+) Live-Chart$/, '$1 live chart'],
   [/^Die Elliott-Wellen-Zählung zu (.+) ist in Arbeit\. Folge mir, damit du sie nicht verpasst\.$/, "The Elliott wave count for $1 is in progress. Follow me so you don't miss it."],
   [/^Noch (\d+) Tage kostenlos$/, '$1 days of free access left'],

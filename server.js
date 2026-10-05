@@ -83,10 +83,13 @@ function getConfig() {
     kv.set('free_until', free_until);
   }
   const days_left = Math.max(0, Math.ceil((Date.parse(`${free_until}T00:00:00Z`) - Date.now()) / 864e5));
-  return { free_until, days_left, price: kv.get('price', 29), small_business: kv.get('small_business', true), payments_enabled: paymentsEnabled(), profile: kv.get('profile', {}) };
+  return { free_until, days_left, price: kv.get('price', 5.99), small_business: kv.get('small_business', true), payments_enabled: paymentsEnabled(), profile: kv.get('profile', {}) };
 }
 
 const ticker = createTicker();
+
+// One-time switch to the 5.99 € membership (Oct 2026). The admin can still change the price in Settings afterwards.
+if (!kv.get('pricing_v2')) { kv.set('price', 5.99); kv.set('pricing_v2', true); }
 
 const depotView = () => { const list = positions.list(); return { positions: list, stats: computeStats(list) }; };
 
@@ -196,7 +199,7 @@ async function api(req, res, url) {
   if (method === 'GET' && path === '/api/ticker') return json(res, 200, { coins: await ticker() });
   if (method === 'GET' && path === '/api/depot') {
     const access = accessOf(req), { positions: list, stats } = depotView();
-    return json(res, 200, { positions: list.map((p) => redactPosition(p, access)), stats, locked: !access.active });
+    return json(res, 200, { positions: list.map((p) => redactPosition(p, access)).filter(Boolean), count: list.length, stats, locked: !access.active });
   }
   if (method === 'GET' && path === '/api/legal') { const out = {}; for (const k of LEGAL_KEYS) out[k] = kv.get(`legal_${k}`, ''); return json(res, 200, out); }
 

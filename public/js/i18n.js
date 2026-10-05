@@ -7,6 +7,13 @@ const KEY = 'awc-lang';
 export const lang = () => (document.documentElement.lang === 'en' ? 'en' : 'de');
 export const loc = () => (lang() === 'en' ? 'en-US' : 'de-DE');
 
+// Euro amount in the visitor's format: 5,99 € (DE) or €5.99 (EN).
+export function eur(n) {
+  const v = Number(n), frac = Number.isInteger(v) ? 0 : 2;
+  const num = v.toLocaleString(loc(), { minimumFractionDigits: frac, maximumFractionDigits: frac });
+  return lang() === 'en' ? `€${num}` : `${num} €`;
+}
+
 // An analysis in the visitor's language: English fields where they exist, otherwise the German original.
 export function localized(a) {
   if (lang() !== 'en' || !a?.en) return a;

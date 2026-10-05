@@ -4,6 +4,7 @@ import { h, api, routeUrl } from './dom.js';
 import { lang, loc } from './i18n.js';
 import { card } from './cards.js';
 import { socialLinks } from './social.js';
+import { paywall } from './paywall.js';
 
 const MARKETS = [
   { id: 'btc', name: 'Bitcoin', sym: 'BTC', group: 'Krypto', tv: 'BINANCE:BTCUSDT', match: /\bBTC|BITCOIN/i },
@@ -15,7 +16,7 @@ const MARKETS = [
 const CONSENT = 'awc-tv-consent';
 const $ = (id) => document.getElementById(id);
 const hasConsent = () => { try { return localStorage.getItem(CONSENT) === '1'; } catch { return false; } };
-let sessionConsent = hasConsent(), analyses = [], prices = {}, profile = {};
+let sessionConsent = hasConsent(), analyses = [], prices = {}, profile = {}, access = null;
 
 const pick = () => MARKETS.find((m) => m.id === new URLSearchParams(location.search).get('m')) || MARKETS[0];
 
@@ -66,9 +67,10 @@ function render() {
       : h('div', { class: 'empty-card' }, h('span', { class: 'live-dot', 'aria-hidden': 'true' }), h('b', {}, 'Analyse folgt in Kürze.'),
         h('p', {}, `Die Elliott-Wellen-Zählung zu ${m.name} ist in Arbeit. Folge mir, damit du sie nicht verpasst.`), socialLinks(profile)));
   window.__layout?.initReveal(info);
-  if (shown === m.id) return;
-  shown = m.id;
-  if (sessionConsent) mountChart(box, m); else consentBox(box, m);
+  if (access === null || shown === `${m.id}:${access}`) return; // wait until we know whether the visitor has access
+  shown = `${m.id}:${access}`;
+  if (!access) box.replaceChildren(paywall(`${m.name} Live-Chart – nur für Mitglieder`, { compact: true }));
+  else if (sessionConsent) mountChart(box, m); else consentBox(box, m);
 }
 
 $('market-tabs').replaceChildren(...MARKETS.map((m) => h('button', { class: 'market-tab', type: 'button', role: 'tab', 'data-id': m.id, onclick: () => {
@@ -79,3 +81,4 @@ render();
 api('/api/analyses').then((all) => { analyses = all; render(); }).catch(() => {});
 api('/api/ticker').then((d) => { for (const c of d.coins || []) prices[c.sym] = c; render(); }).catch(() => {});
 api('/api/config').then((c) => { profile = c.profile || {}; render(); }).catch(() => {});
+api('/api/account/me').then((d) => { access = !!d.access?.active; render(); }).catch(() => { access = false; render(); });
