@@ -141,7 +141,10 @@ async function serveFile(req, res, path, cache, status = 200) {
     const st = await stat(path);
     if (!st.isFile()) throw new Error('not a file');
     const ext = extname(path);
-    const headers = { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': cache, Vary: 'Accept-Encoding' };
+    // ETag lets browsers revalidate cheaply, so a new release shows up on the next page load (304 when unchanged).
+    const etag = `"${st.size.toString(36)}-${Math.round(st.mtimeMs).toString(36)}"`;
+    const headers = { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': cache, Vary: 'Accept-Encoding', ETag: etag };
+    if (status === 200 && req.headers['if-none-match'] === etag && ext !== '.html') return send(res, 304, '', { ETag: etag, 'Cache-Control': cache });
     let body = await readFile(path);
     // HTML may reference absolute URLs (link previews need them): fill in this site's address.
     const base = ext === '.html' ? publicUrl(req) : '';
@@ -471,7 +474,7 @@ const server = createServer(async (req, res) => {
     const clean = pages[url.pathname] || url.pathname;
     const file = normalize(join(PUBLIC_DIR, clean));
     if (!file.startsWith(PUBLIC_DIR + sep)) return send(res, 403, 'Forbidden');
-    return await serveFile(req, res, file, extname(file) === '.html' ? 'no-cache' : 'public, max-age=3600');
+    return await serveFile(req, res, file, extname(file) === '.html' || ['.js', '.css'].includes(extname(file)) ? 'no-cache' : 'public, max-age=3600');
   } catch (e) {
     if (e instanceof HttpError) return json(res, e.status, { error: e.message });
     console.error(e);
