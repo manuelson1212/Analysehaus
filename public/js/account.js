@@ -6,23 +6,70 @@ const changed = () => window.dispatchEvent(new Event('account-changed'));
 const notice = (kind, text) => h('div', { class: `msg ${kind}`, role: kind === 'err' ? 'alert' : 'status' }, text);
 const fmt = (iso) => (iso ? iso.slice(0, 10) : '');
 
-function authForm(mode, onDone) {
-  const isReg = mode === 'register';
+// One card for both: a switch between "register for free" and "log in", plus "forgot password" and the reset link page.
+function authCard(onDone) {
+  const params = new URLSearchParams(location.search);
+  let mode = params.get('reset') ? 'reset' : 'register';
   const out = h('div');
-  const email = h('input', { type: 'text', id: `${mode}-email`, inputmode: 'email', autocomplete: 'email', maxlength: 120, required: true });
-  const pw = h('input', { type: 'password', id: `${mode}-pw`, autocomplete: isReg ? 'new-password' : 'current-password', required: true });
-  const terms = h('input', { type: 'checkbox', id: 'accept-terms' });
-  const btn = h('button', { class: 'btn', type: 'submit' }, isReg ? 'Konto erstellen' : 'Einloggen');
-  return h('form', { class: 'panel form', novalidate: true, onsubmit: async (e) => {
-    e.preventDefault(); btn.disabled = true;
-    try { await api(`/api/account/${mode}`, { method: 'POST', body: { email: email.value, password: pw.value, accept_terms: isReg ? terms.checked : undefined } }); changed(); onDone(); }
-    catch (err) { out.replaceChildren(notice('err', err.message)); btn.disabled = false; }
-  } },
-  h('h2', {}, isReg ? 'Konto erstellen' : 'Einloggen'),
-  h('div', { class: 'field' }, h('label', { class: 'label', for: `${mode}-email` }, 'E-Mail'), email),
-  h('div', { class: 'field' }, h('label', { class: 'label', for: `${mode}-pw` }, isReg ? 'Passwort (mindestens 10 Zeichen)' : 'Passwort'), pw),
-  isReg && h('label', { class: 'check', for: 'accept-terms' }, terms, h('span', {}, 'Ich akzeptiere die ', h('a', { href: routeUrl('terms') }, 'AGB'), ' und habe die ', h('a', { href: routeUrl('privacy') }, 'Datenschutzerklärung'), ' gelesen.')),
-  out, btn);
+  const card = h('div', { class: 'panel auth-card' });
+  const field = (id, label, input) => h('div', { class: 'field' }, h('label', { class: 'label', for: id }, label), input);
+  const tab = (m, label) => h('button', { type: 'button', role: 'tab', class: `auth-tab${mode === m ? ' on' : ''}`, 'aria-selected': String(mode === m), onclick: () => { mode = m; draw(); } }, label);
+
+  function submitter(btn, fn) {
+    return async (e) => {
+      e.preventDefault(); btn.disabled = true; out.replaceChildren();
+      try { await fn(); } catch (err) { out.replaceChildren(notice('err', err.message)); btn.disabled = false; }
+    };
+  }
+
+  function draw() {
+    out.replaceChildren();
+    const email = h('input', { type: 'text', id: 'auth-email', inputmode: 'email', autocomplete: 'email', maxlength: 120, required: true });
+    const pw = h('input', { type: 'password', id: 'auth-pw', autocomplete: mode === 'login' ? 'current-password' : 'new-password', required: true });
+    let body;
+    if (mode === 'register' || mode === 'login') {
+      const isReg = mode === 'register';
+      const terms = h('input', { type: 'checkbox', id: 'accept-terms' });
+      const btn = h('button', { class: 'btn lg block', type: 'submit' }, isReg ? 'Kostenlos registrieren' : 'Einloggen');
+      body = h('form', { class: 'form', novalidate: true, onsubmit: submitter(btn, async () => {
+        await api(`/api/account/${mode}`, { method: 'POST', body: { email: email.value, password: pw.value, accept_terms: isReg ? terms.checked : undefined } });
+        changed(); onDone();
+      }) },
+      field('auth-email', 'E-Mail', email),
+      field('auth-pw', isReg ? 'Passwort (mindestens 10 Zeichen)' : 'Passwort', pw),
+      isReg && h('label', { class: 'check', for: 'accept-terms' }, terms, h('span', {}, 'Ich akzeptiere die ', h('a', { href: routeUrl('terms') }, 'AGB'), ' und habe die ', h('a', { href: routeUrl('privacy') }, 'Datenschutzerklärung'), ' gelesen.')),
+      out, btn,
+      !isReg && h('button', { type: 'button', class: 'link-btn', onclick: () => { mode = 'forgot'; draw(); } }, 'Passwort vergessen?'));
+    } else if (mode === 'forgot') {
+      const btn = h('button', { class: 'btn lg block', type: 'submit' }, 'Link zum Zurücksetzen senden');
+      body = h('form', { class: 'form', novalidate: true, onsubmit: submitter(btn, async () => {
+        await api('/api/account/forgot', { method: 'POST', body: { email: email.value } });
+        out.replaceChildren(notice('ok', 'Wenn es zu dieser E-Mail-Adresse ein Konto gibt, ist jetzt eine E-Mail mit einem Link unterwegs. Er ist 1 Stunde gültig. Schau auch im Spam-Ordner nach.'));
+      }) },
+      h('p', { class: 'muted' }, 'Gib die E-Mail-Adresse deines Kontos ein. Wir schicken dir einen Link, mit dem du ein neues Passwort festlegst.'),
+      field('auth-email', 'E-Mail', email), out, btn,
+      h('button', { type: 'button', class: 'link-btn', onclick: () => { mode = 'login'; draw(); } }, '← Zurück zum Login'));
+    } else {
+      const pw2 = h('input', { type: 'password', id: 'auth-pw2', autocomplete: 'new-password', required: true });
+      const btn = h('button', { class: 'btn lg block', type: 'submit' }, 'Neues Passwort speichern');
+      body = h('form', { class: 'form', novalidate: true, onsubmit: submitter(btn, async () => {
+        if (pw.value !== pw2.value) throw new Error('Die beiden Passwörter stimmen nicht überein.');
+        await api('/api/account/reset', { method: 'POST', body: { token: params.get('reset'), password: pw.value } });
+        history.replaceState(null, '', location.pathname);
+        changed(); onDone();
+      }) },
+      h('p', { class: 'muted' }, 'Lege ein neues Passwort für dein Konto fest. Danach bist du direkt eingeloggt.'),
+      field('auth-pw', 'Neues Passwort (mindestens 10 Zeichen)', pw), field('auth-pw2', 'Neues Passwort wiederholen', pw2), out, btn);
+    }
+    card.replaceChildren(...[
+      (mode === 'register' || mode === 'login') && h('div', { class: 'auth-tabs', role: 'tablist' }, tab('register', 'Kostenlos registrieren'), tab('login', 'Anmelden')),
+      mode === 'forgot' && h('h2', {}, 'Passwort vergessen'),
+      mode === 'reset' && h('h2', {}, 'Neues Passwort festlegen'),
+      body].filter(Boolean));
+    card.querySelector('input')?.focus({ preventScroll: true });
+  }
+  draw();
+  return card;
 }
 
 function statusText(d) {
@@ -62,6 +109,20 @@ async function loggedIn(d) {
       } }, 'Endgültig löschen');
       return h('div', { class: 'row' }, pw, b);
     })());
+  const pwOut = h('div');
+  const curPw = h('input', { type: 'password', id: 'cur-pw', autocomplete: 'current-password' });
+  const newPw = h('input', { type: 'password', id: 'new-pw', autocomplete: 'new-password' });
+  const pwBtn = h('button', { class: 'btn', type: 'submit' }, 'Passwort ändern');
+  const changePw = h('details', { class: 'faq' }, h('summary', {}, 'Passwort ändern'),
+    h('form', { class: 'form', onsubmit: async (e) => {
+      e.preventDefault(); pwBtn.disabled = true;
+      try { await api('/api/account/password', { method: 'POST', body: { current: curPw.value, password: newPw.value } }); curPw.value = ''; newPw.value = ''; pwOut.replaceChildren(notice('ok', 'Dein Passwort wurde geändert. Andere Geräte sind jetzt abgemeldet.')); }
+      catch (err) { pwOut.replaceChildren(notice('err', err.message)); }
+      pwBtn.disabled = false;
+    } },
+    h('div', { class: 'field' }, h('label', { class: 'label', for: 'cur-pw' }, 'Aktuelles Passwort'), curPw),
+    h('div', { class: 'field' }, h('label', { class: 'label', for: 'new-pw' }, 'Neues Passwort (mindestens 10 Zeichen)'), newPw),
+    pwOut, h('div', { class: 'row' }, pwBtn)));
   const success = new URLSearchParams(location.search).get('checkout') === 'success';
   root.replaceChildren(...[
     h('div', { class: 'page-head' }, h('p', { class: 'eyebrow' }, 'Konto'), h('h1', {}, user.email)),
@@ -74,7 +135,7 @@ async function loggedIn(d) {
         user.has_customer && portal,
         h('button', { class: 'btn ghost', onclick: async () => { await api('/api/account/logout', { method: 'POST', body: {} }); changed(); render(); } }, 'Abmelden')),
       out),
-    del].filter(Boolean)); // replaceChildren would print "false" for skipped items
+    changePw, del].filter(Boolean)); // replaceChildren would print "false" for skipped items
   if (success && !['member', 'comped'].includes(access.reason)) setTimeout(render, 2500); // webhook may take a moment
 }
 
@@ -84,6 +145,6 @@ async function render() {
   if (d.user) return loggedIn(d);
   root.replaceChildren(
     h('div', { class: 'page-head' }, h('p', { class: 'eyebrow' }, 'Konto'), h('h1', {}, 'Dein Konto')),
-    h('div', { class: 'two-col' }, authForm('register', render), authForm('login', render)));
+    h('div', { class: 'auth-wrap' }, authCard(render)));
 }
 render();

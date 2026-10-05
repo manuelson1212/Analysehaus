@@ -92,6 +92,21 @@ export const EN = {
   'Analyse · Apex Wave Capital': 'Analysis · Apex Wave Capital',
   'Elliott-Wellen-Analyse mit Wellenzählung, Szenarien, Zielen und Invalidierung.': 'Elliott wave analysis with wave count, scenarios, targets and invalidation.',
 
+  // Login, register, password
+  'Kostenlos registrieren': 'Register for free', Anmelden: 'Log in', 'Passwort vergessen?': 'Forgot password?', 'Passwort vergessen': 'Forgot password',
+  'Link zum Zurücksetzen senden': 'Send reset link', '← Zurück zum Login': '← Back to login',
+  'Gib die E-Mail-Adresse deines Kontos ein. Wir schicken dir einen Link, mit dem du ein neues Passwort festlegst.': 'Enter the email address of your account. We will send you a link to set a new password.',
+  'Wenn es zu dieser E-Mail-Adresse ein Konto gibt, ist jetzt eine E-Mail mit einem Link unterwegs. Er ist 1 Stunde gültig. Schau auch im Spam-Ordner nach.': 'If there is an account for this email address, an email with a link is on its way. It is valid for 1 hour. Please also check your spam folder.',
+  'Neues Passwort festlegen': 'Set a new password', 'Lege ein neues Passwort für dein Konto fest. Danach bist du direkt eingeloggt.': 'Set a new password for your account. You will be logged in right away.',
+  'Neues Passwort (mindestens 10 Zeichen)': 'New password (at least 10 characters)', 'Neues Passwort wiederholen': 'Repeat new password', 'Neues Passwort speichern': 'Save new password',
+  'Die beiden Passwörter stimmen nicht überein.': 'The two passwords do not match.',
+  'Passwort ändern': 'Change password', 'Aktuelles Passwort': 'Current password',
+  'Dein Passwort wurde geändert. Andere Geräte sind jetzt abgemeldet.': 'Your password has been changed. Other devices are now logged out.',
+  'Das aktuelle Passwort ist falsch.': 'The current password is wrong.',
+  'Dieser Link ist abgelaufen oder wurde schon benutzt. Bitte fordere einen neuen an.': 'This link has expired or was already used. Please request a new one.',
+  'Der E-Mail-Versand ist noch nicht eingerichtet. Bitte schreib uns über das Kontaktformular, wir helfen dir sofort.': 'Email is not set up yet. Please write to us via the contact form and we will help you right away.',
+  'Die E-Mail konnte gerade nicht gesendet werden. Bitte versuche es in ein paar Minuten erneut.': 'The email could not be sent right now. Please try again in a few minutes.',
+
   // Membership and paywall
   'Alle schriftlichen Analysen mit Wellenzählung und Szenarien': 'All written analyses with wave count and scenarios',
   'Alle Zielzonen, Fibonacci-Level und Invalidierungen': 'All target zones, Fibonacci levels and invalidations',

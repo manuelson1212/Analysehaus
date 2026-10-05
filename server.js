@@ -3,7 +3,8 @@ import { readFile, stat } from 'node:fs/promises';
 import { join, extname, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
-import { db, analyses, packs, messages, positions, kv, users, briefings, cancellations, UPLOAD_DIR } from './lib/db.js';
+import { db, analyses, packs, messages, positions, kv, users, briefings, cancellations, resets, UPLOAD_DIR } from './lib/db.js';
+import { mailEnabled, sendMail } from './lib/mail.js';
 import { berlinParts, startScheduler } from './lib/scheduler.js';
 import { computeStats } from './lib/depot.js';
 import { createTicker } from './lib/ticker.js';
@@ -12,9 +13,9 @@ import { hashPassword, verifyPassword } from './lib/passwords.js';
 import { paymentsEnabled, createCheckout, createPortal, verifyWebhook, applyEvent, cancelAtPeriodEnd } from './lib/billing.js';
 import {
   ADMIN_PASSWORD, PASSWORD_GENERATED, checkPassword, makeToken, verifyToken,
-  parseCookies, sessionCookie, clearCookie, loginAllowed, recordLogin, makeUserToken, userIdFromToken, userCookie, clearUserCookie,
+  parseCookies, sessionCookie, clearCookie, loginAllowed, recordLogin, makeUserToken, userIdFromToken, tokenIssuedAt, userCookie, clearUserCookie,
 } from './lib/auth.js';
-import { HttpError, parseAnalysis, parseContact, parsePosition, parseSettings, parseProfile, parseCredentials, parseLegal, parseCancellation, saveImage, deleteImage } from './lib/validate.js';
+import { HttpError, parseAnalysis, parseContact, parsePosition, parseSettings, parseProfile, parseCredentials, parseNewPassword, parseLegal, parseCancellation, saveImage, deleteImage } from './lib/validate.js';
 import { generatePack, generatePromoPack, generateBriefingRecord, finalize, testAgent, providerName } from './lib/agent/index.js';
 
 const PUBLIC_DIR = join(fileURLToPath(new URL('.', import.meta.url)), 'public');
@@ -134,7 +135,15 @@ async function readRaw(req, limit = 1024 * 1024) {
   return Buffer.concat(chunks);
 }
 
-const currentUser = (req) => { const id = userIdFromToken(parseCookies(req.headers.cookie).ah_user); return id ? users.get(id) : null; };
+function currentUser(req) {
+  const token = parseCookies(req.headers.cookie).ah_user, id = userIdFromToken(token);
+  const user = id ? users.get(id) : null;
+  // A password change or reset signs out every other device.
+  if (user?.pw_changed_at && tokenIssuedAt(token) < user.pw_changed_at) return null;
+  return user;
+}
+const signIn = (req, user) => ({ 'Set-Cookie': userCookie(makeUserToken(user.id), isHttps(req)) });
+const RESET_TTL_MS = 60 * 60 * 1000;
 const accessOf = (req) => accessFor({ user: currentUser(req), admin: isAdmin(req), config: getConfig() });
 const userView = (u) => u && { email: u.email, comped: !!u.comped, sub_status: u.sub_status, sub_period_end: u.sub_period_end, has_customer: !!u.stripe_customer_id, created_at: u.created_at };
 const me = (req, user = currentUser(req)) => ({ user: userView(user), access: accessFor({ user, admin: isAdmin(req), config: getConfig() }), config: getConfig(), payments_enabled: paymentsEnabled() });
@@ -243,6 +252,34 @@ async function api(req, res, url) {
     return json(res, 200, me(req, user), { 'Set-Cookie': userCookie(makeUserToken(user.id), isHttps(req)) });
   }
   if (method === 'POST' && path === '/api/account/logout') return json(res, 200, { ok: true }, { 'Set-Cookie': clearUserCookie() });
+  // Forgotten password: always the same answer, so nobody can find out which emails have an account.
+  if (method === 'POST' && path === '/api/account/forgot') {
+    if (!mailEnabled()) throw new HttpError(503, 'Der E-Mail-Versand ist noch nicht eingerichtet. Bitte schreib uns über das Kontaktformular, wir helfen dir sofort.');
+    const body = await readJson(req);
+    const email = String(body.email ?? '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) throw new HttpError(400, 'Bitte gib eine gültige E-Mail-Adresse an');
+    rateLimit(ip, 'forgot', 5);
+    const user = users.byEmail(email);
+    if (user) {
+      try { rateLimit(email, 'forgot-mail', 3); } catch { return json(res, 200, { ok: true }); }
+      const link = `${publicUrl(req)}/account?reset=${resets.create(user.id, RESET_TTL_MS)}`;
+      try {
+        await sendMail({ to: user.email, subject: 'Neues Passwort für Apex Wave Capital / New password',
+          text: `Hallo,\n\nüber diesen Link legst du ein neues Passwort fest (gültig für 1 Stunde):\n${link}\n\nDu hast das nicht angefordert? Dann ignoriere diese E-Mail einfach, dein Passwort bleibt unverändert.\n\n---\n\nHi,\n\nuse this link to set a new password (valid for 1 hour):\n${link}\n\nDidn't request this? Just ignore this email, your password stays the same.\n\nApex Wave Capital\n${publicUrl(req)}` });
+      } catch (e) { console.error('Password reset mail failed:', e.message); throw new HttpError(502, 'Die E-Mail konnte gerade nicht gesendet werden. Bitte versuche es in ein paar Minuten erneut.'); }
+    }
+    return json(res, 200, { ok: true });
+  }
+  if (method === 'POST' && path === '/api/account/reset') {
+    rateLimit(ip, 'reset', 10);
+    const body = await readJson(req);
+    const password = parseNewPassword(body.password);
+    const userId = resets.consume(String(body.token ?? ''));
+    const user = userId && users.get(userId);
+    if (!user) throw new HttpError(400, 'Dieser Link ist abgelaufen oder wurde schon benutzt. Bitte fordere einen neuen an.');
+    const updated = users.update(user.id, { pw_hash: await hashPassword(password), pw_changed_at: Date.now() });
+    return json(res, 200, me(req, updated), signIn(req, updated));
+  }
   if (path.startsWith('/api/account/') && path !== '/api/account/') {
     const user = currentUser(req);
     if (!user) throw new HttpError(401, 'Bitte logge dich ein.');
@@ -254,6 +291,16 @@ async function api(req, res, url) {
       users.update(user.id, { withdrawal_waiver_at: new Date().toISOString() });
       try { return json(res, 200, { url: await createCheckout({ user, baseUrl: publicUrl(req), price: getConfig().price, smallBusiness: getConfig().small_business }) }); }
       catch (e) { console.error('Stripe checkout failed:', e.message); throw new HttpError(502, 'Die Zahlungsseite konnte gerade nicht geöffnet werden. Bitte versuche es in ein paar Minuten erneut.'); }
+    }
+    if (method === 'POST' && path === '/api/account/password') {
+      const body = await readJson(req);
+      if (!loginAllowed(`u:${ip}`)) throw new HttpError(429, 'Zu viele Versuche. Bitte versuche es später erneut.');
+      const ok = await verifyPassword(String(body.current ?? ''), user.pw_hash);
+      recordLogin(`u:${ip}`, ok);
+      if (!ok) throw new HttpError(401, 'Das aktuelle Passwort ist falsch.');
+      const password = parseNewPassword(body.password);
+      const updated = users.update(user.id, { pw_hash: await hashPassword(password), pw_changed_at: Date.now() });
+      return json(res, 200, { ok: true }, signIn(req, updated));
     }
     if (method === 'POST' && path === '/api/account/portal') {
       if (!paymentsEnabled() || !user.stripe_customer_id) throw new HttpError(400, 'Für dieses Konto gibt es noch kein Abo.');
@@ -310,6 +357,12 @@ async function api(req, res, url) {
     const u = users.get(Number(um[1])); if (!u) throw new HttpError(404, 'Not found');
     users.update(u.id, { comped: (await readJson(req)).comped ? 1 : 0 });
     return json(res, 200, { ok: true });
+  }
+  // Manual help: the admin creates a reset link (valid 24 h) and sends it to the member, e.g. when email is not set up.
+  um = /^\/api\/admin\/users\/(\d+)\/reset-link$/.exec(path);
+  if (um && method === 'POST') {
+    const u = users.get(Number(um[1])); if (!u) throw new HttpError(404, 'Not found');
+    return json(res, 200, { link: `${publicUrl(req)}/account?reset=${resets.create(u.id, 24 * RESET_TTL_MS)}`, email: u.email });
   }
   if (method === 'GET' && path === '/api/admin/legal') { const out = {}; for (const k of LEGAL_KEYS) out[k] = kv.get(`legal_${k}`, ''); return json(res, 200, out); }
   if (method === 'PUT' && path === '/api/admin/legal') { const d = parseLegal(await readJson(req)); for (const k of LEGAL_KEYS) kv.set(`legal_${k}`, d[k]); return json(res, 200, d); }

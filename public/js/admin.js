@@ -325,7 +325,12 @@ async function renderUsers(flash) {
   const rows = list.map((u) => h('tr', {},
     h('td', {}, u.email), h('td', { class: 'muted' }, u.created_at.slice(0, 10)),
     h('td', {}, h('span', { class: `badge ${u.access === 'none' ? '' : 'pub'}` }, ACCESS[u.access] || u.access), u.sub_status && h('span', { class: 'muted' }, ` ${u.sub_status}`)),
-    h('td', {}, h('button', { class: 'btn sm ghost', onclick: async () => { await api(`/api/admin/users/${u.id}`, { method: 'PUT', body: { comped: !u.comped } }); renderUsers(u.comped ? 'Free access removed.' : 'Free access granted.'); } }, u.comped ? 'Remove free access' : 'Grant free access'))));
+    h('td', { class: 'actions' }, h('button', { class: 'btn sm ghost', onclick: async () => { await api(`/api/admin/users/${u.id}`, { method: 'PUT', body: { comped: !u.comped } }); renderUsers(u.comped ? 'Free access removed.' : 'Free access granted.'); } }, u.comped ? 'Remove free access' : 'Grant free access'),
+      h('button', { class: 'btn sm ghost', onclick: async () => {
+        const r = await api(`/api/admin/users/${u.id}/reset-link`, { method: 'POST', body: {} });
+        try { await navigator.clipboard.writeText(r.link); } catch { /* clipboard blocked: the link is shown below */ }
+        renderUsers(`Password reset link for ${r.email} (valid 24 h, copied if your browser allows it). Send it to the member: ${r.link}`);
+      } }, 'Password reset link'))));
   shell(h('div', { class: 'studio' }, flash && notice('ok', flash),
     h('p', { class: 'muted' }, 'Registered members. Paying members come from Stripe; you can also grant free access, for example for testers or partners.'),
     list.length ? h('div', { class: 'scroll-x' }, h('table', { class: 'table' }, h('thead', {}, h('tr', {}, ['Email', 'Joined', 'Access', ''].map((t) => h('th', {}, t)))), h('tbody', {}, rows))) : h('div', { class: 'empty' }, 'No members yet.')));

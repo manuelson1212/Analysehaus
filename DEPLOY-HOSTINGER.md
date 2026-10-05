@@ -58,6 +58,17 @@ cd ~/Analysehaus && bash deploy/enable-auto-update.sh
 Danach prüft der Server alle 5 Minuten, ob es auf GitHub eine neue Version gibt, und schaltet sie automatisch live.
 Protokoll: `tail /var/log/apexwave-update.log`. Ausschalten: `rm /etc/cron.d/apexwave-update`.
 
+## E-Mail für „Passwort vergessen“
+
+Einmal in Termius ausführen und das Passwort des Postfachs info@apexwave.pro eingeben (es wird nicht angezeigt):
+
+```bash
+cd ~/Analysehaus && read -rsp "Passwort von info@apexwave.pro: " P && echo && sed -i '/^SMTP_/d;/^MAIL_FROM=/d' .env && printf "SMTP_HOST=smtp.hostinger.com\nSMTP_PORT=465\nSMTP_USER=info@apexwave.pro\nSMTP_PASS='%s'\nMAIL_FROM='Apex Wave Capital <info@apexwave.pro>'\n" "$P" >> .env && docker compose up -d --force-recreate app && echo OK
+```
+
+Ohne diese Einstellung zeigt „Passwort vergessen“ einen Hinweis auf das Kontaktformular. Im Admin unter **Members**
+kannst du jederzeit mit „Password reset link“ einen Link erzeugen und dem Mitglied selbst schicken.
+
 ## Updates von Hand einspielen
 
 ```bash
