@@ -318,6 +318,26 @@ async function renderUsers(flash) {
     list.length ? h('div', { class: 'scroll-x' }, h('table', { class: 'table' }, h('thead', {}, h('tr', {}, ['Email', 'Joined', 'Access', ''].map((t) => h('th', {}, t)))), h('tbody', {}, rows))) : h('div', { class: 'empty' }, 'No members yet.')));
 }
 
+// Social links and the "about" text on the home page.
+function profileForm(p) {
+  const f = {};
+  const msg = h('div');
+  const field = (k, label, ph) => { f[k] = h('input', { type: 'text', id: `p-${k}`, inputmode: 'url', placeholder: ph, value: p[k] || '' }); return h('div', { class: 'field' }, h('label', { class: 'label', for: `p-${k}` }, label), f[k]); };
+  f.about = h('textarea', { id: 'p-about', rows: 5, placeholder: 'Leave empty to use the default text.' }, p.about || '');
+  return h('form', { class: 'panel form', onsubmit: async (e) => {
+    e.preventDefault();
+    try {
+      await api('/api/admin/profile', { method: 'PUT', body: { tiktok: f.tiktok.value, instagram: f.instagram.value, youtube: f.youtube.value, x: f.x.value, about: f.about.value } });
+      msg.replaceChildren(notice('ok', 'Saved. The links now show on the home page and in the footer.'));
+    } catch (err) { msg.replaceChildren(notice('err', err.message)); }
+  } }, h('h2', {}, 'Profile and social links'),
+  h('p', { class: 'muted' }, 'Paste the full address of each profile. Leave a field empty to hide that network.'),
+  h('div', { class: 'two' }, field('tiktok', 'TikTok', 'https://www.tiktok.com/@apexwavecapital'), field('instagram', 'Instagram', 'https://www.instagram.com/apexwavecapital')),
+  h('div', { class: 'two' }, field('youtube', 'YouTube', 'https://www.youtube.com/@…'), field('x', 'X (Twitter)', 'https://x.com/…')),
+  h('div', { class: 'field' }, h('label', { class: 'label', for: 'p-about' }, 'About text on the home page (German)'), f.about),
+  msg, h('div', { class: 'row' }, h('button', { class: 'btn', type: 'submit' }, 'Save profile')));
+}
+
 async function renderSettings(flash) {
   shell(h('p', { class: 'muted' }, 'Loading…'));
   const [c, legal] = await Promise.all([api('/api/config'), api('/api/admin/legal')]);
@@ -360,6 +380,7 @@ Die Inhalte dieser Website sind Marktanalysen zu Bildungszwecken. Sie sind keine
     h('label', { class: 'check', for: 's-small' }, smallBiz, h('span', {}, 'Kleinunternehmer (§ 19 UStG): prices are shown without VAT, with the § 19 notice.')),
     h('p', { class: 'fine' }, 'The real price is the one you set for the product in Stripe. Keep both the same.'),
     msg, h('div', { class: 'row' }, h('button', { class: 'btn', type: 'submit' }, 'Save'))),
+    profileForm(c.profile || {}),
     h('form', { class: 'panel form', onsubmit: async (e) => {
       e.preventDefault();
       try { await api('/api/admin/legal', { method: 'PUT', body: { imprint: tImp.value, privacy: tPriv.value, terms: tTerms.value } }); msg2.replaceChildren(notice('ok', 'Saved. The pages are live at /imprint, /privacy and /terms.')); }

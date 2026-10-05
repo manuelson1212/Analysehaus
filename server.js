@@ -6,6 +6,7 @@ import { gzipSync } from 'node:zlib';
 import { db, analyses, packs, messages, positions, kv, users, briefings, cancellations, UPLOAD_DIR } from './lib/db.js';
 import { berlinParts, startScheduler } from './lib/scheduler.js';
 import { computeStats } from './lib/depot.js';
+import { createTicker } from './lib/ticker.js';
 import { accessFor, redactAnalysis, redactPosition } from './lib/access.js';
 import { hashPassword, verifyPassword } from './lib/passwords.js';
 import { paymentsEnabled, createCheckout, createPortal, verifyWebhook, applyEvent, cancelAtPeriodEnd } from './lib/billing.js';
@@ -13,7 +14,7 @@ import {
   ADMIN_PASSWORD, PASSWORD_GENERATED, checkPassword, makeToken, verifyToken,
   parseCookies, sessionCookie, clearCookie, loginAllowed, recordLogin, makeUserToken, userIdFromToken, userCookie, clearUserCookie,
 } from './lib/auth.js';
-import { HttpError, parseAnalysis, parseContact, parsePosition, parseSettings, parseCredentials, parseLegal, parseCancellation, saveImage, deleteImage } from './lib/validate.js';
+import { HttpError, parseAnalysis, parseContact, parsePosition, parseSettings, parseProfile, parseCredentials, parseLegal, parseCancellation, saveImage, deleteImage } from './lib/validate.js';
 import { generatePack, generatePromoPack, generateBriefingRecord, finalize, testAgent, providerName } from './lib/agent/index.js';
 
 const PUBLIC_DIR = join(fileURLToPath(new URL('.', import.meta.url)), 'public');
@@ -76,8 +77,10 @@ function getConfig() {
     kv.set('free_until', free_until);
   }
   const days_left = Math.max(0, Math.ceil((Date.parse(`${free_until}T00:00:00Z`) - Date.now()) / 864e5));
-  return { free_until, days_left, price: kv.get('price', 29), small_business: kv.get('small_business', true), payments_enabled: paymentsEnabled() };
+  return { free_until, days_left, price: kv.get('price', 29), small_business: kv.get('small_business', true), payments_enabled: paymentsEnabled(), profile: kv.get('profile', {}) };
 }
+
+const ticker = createTicker();
 
 const depotView = () => { const list = positions.list(); return { positions: list, stats: computeStats(list) }; };
 
@@ -181,6 +184,7 @@ async function api(req, res, url) {
     return json(res, 201, { ok: true });
   }
   if (method === 'GET' && path === '/api/config') return json(res, 200, getConfig());
+  if (method === 'GET' && path === '/api/ticker') return json(res, 200, { coins: await ticker() });
   if (method === 'GET' && path === '/api/depot') {
     const access = accessOf(req), { positions: list, stats } = depotView();
     return json(res, 200, { positions: list.map((p) => redactPosition(p, access)), stats, locked: !access.active });
@@ -302,6 +306,10 @@ async function api(req, res, url) {
   if (method === 'PUT' && path === '/api/admin/config') {
     const d = parseSettings(await readJson(req));
     kv.set('free_until', d.free_until); kv.set('price', d.price); kv.set('small_business', d.small_business);
+    return json(res, 200, getConfig());
+  }
+  if (method === 'PUT' && path === '/api/admin/profile') {
+    kv.set('profile', parseProfile(await readJson(req)));
     return json(res, 200, getConfig());
   }
   if (method === 'GET' && path === '/api/admin/agent-status') {

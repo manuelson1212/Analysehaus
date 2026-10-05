@@ -143,7 +143,7 @@ function parse(b) {
 const sortPos = (list) => [...list].sort((a, b) => (b.closed_at || b.opened_at || b.created_at || '').localeCompare(a.closed_at || a.opened_at || a.created_at || '') || b.id - a.id);
 function cfg(st) {
   const c = st.config || { free_until: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10), price: 29 };
-  return { small_business: true, ...c, days_left: Math.max(0, Math.ceil((Date.parse(`${c.free_until}T00:00:00Z`) - Date.now()) / 864e5)) };
+  return { small_business: true, ...c, profile: st.profile || {}, days_left: Math.max(0, Math.ceil((Date.parse(`${c.free_until}T00:00:00Z`) - Date.now()) / 864e5)) };
 }
 const numOrNull = (v, name) => { if (v === '' || v == null) return null; const n = Number(v); if (!Number.isFinite(n)) throw new Err(400, `${name} must be a number`); return n; };
 function parsePos(b) {
@@ -188,6 +188,7 @@ async function route(method, path, body) {
     store.write(st); return { ok: true };
   }
   if (method === 'GET' && path === '/api/config') return cfg(st);
+  if (method === 'GET' && path === '/api/ticker') return { coins: [] }; // live prices need the real server
   if (method === 'GET' && path === '/api/depot') { const ac = accessNow(st); return { positions: sortPos(st.positions).map((p) => redactPosition(p, ac)), stats: computeStats(st.positions), locked: !ac.active }; }
   if (method === 'GET' && path === '/api/legal') return st.legal || { imprint: '', privacy: '', terms: '' };
   if (method === 'POST' && path === '/api/cancel') {
@@ -248,6 +249,12 @@ async function route(method, path, body) {
   if (um && method === 'PUT') { const u = (st.users || []).find((x) => x.id === +um[1]); if (!u) throw new Err(404, 'Not found'); u.comped = !!body.comped; store.write(st); return { ok: true }; }
   if (method === 'GET' && path === '/api/admin/legal') return st.legal || { imprint: '', privacy: '', terms: '' };
   if (method === 'PUT' && path === '/api/admin/legal') { st.legal = { imprint: String(body.imprint || ''), privacy: String(body.privacy || ''), terms: String(body.terms || '') }; store.write(st); return st.legal; }
+  if (method === 'PUT' && path === '/api/admin/profile') {
+    const out = {};
+    for (const k of ['tiktok', 'instagram', 'youtube', 'x']) { const v = String(body[k] || '').trim(); if (v && !/^https:\/\/\S+$/.test(v)) throw new Err(400, `${k} link must start with https://`); if (v) out[k] = v; }
+    if (String(body.about || '').trim()) out.about = String(body.about).trim().slice(0, 1500);
+    st.profile = out; store.write(st); return cfg(st);
+  }
   if (method === 'PUT' && path === '/api/admin/config') {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(body.free_until || '')) throw new Err(400, 'Free access end date is required');
     const price = Number(body.price);

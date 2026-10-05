@@ -1,5 +1,6 @@
 // Shared site chrome: header with always-visible navigation, free-access bar, footer, scroll reveal.
 import { h, api, bindLinks, routeUrl } from './dom.js';
+import { socialLinks } from './social.js';
 
 const NAV = [['home', 'Start'], ['analyses', 'Analysen'], ['depot', 'Live-Depot'], ['pricing', 'Preise'], ['support', 'Kontakt']];
 
@@ -18,6 +19,7 @@ function footer() {
     h('div', { class: 'foot-row' },
       h('a', { class: 'brand', 'data-route': 'home', href: routeUrl('home') }, h('span', { class: 'brand-mark', 'aria-hidden': 'true' }), h('span', {}, 'Apex Wave ', h('b', {}, 'Capital'))),
       h('nav', { class: 'foot-nav', 'aria-label': 'Fußzeile' }, NAV.map(([key, label]) => h('a', { 'data-route': key, href: routeUrl(key) }, label)), h('a', { 'data-route': 'admin', href: routeUrl('admin') }, 'Admin'))),
+    h('div', { id: 'foot-social' }),
     h('nav', { class: 'legal-nav', 'aria-label': 'Rechtliches' }, ['imprint', 'privacy', 'terms', 'cancel'].map((k) => h('a', { 'data-route': k, href: routeUrl(k), class: k === 'cancel' ? 'cancel-link' : null }, { imprint: 'Impressum', privacy: 'Datenschutz', terms: 'AGB', cancel: 'Verträge hier kündigen' }[k]))),
     h('p', { class: 'fineprint' }, 'Marktanalysen zu Bildungszwecken. Keine Anlageberatung, kein Angebot und keine Aufforderung zum Kauf oder Verkauf. Das Live-Depot ist eine Simulation ohne echtes Geld. Trading ist mit erheblichen Verlustrisiken verbunden; vergangene Ergebnisse sind keine Garantie für die Zukunft.'));
 }
@@ -57,8 +59,10 @@ async function freeBar() {
   try {
     const c = await api('/api/config');
     window.__config = c;
+    const social = socialLinks(c.profile, { compact: true });
+    document.getElementById('foot-social')?.replaceChildren(...(social ? [social] : []));
     host.replaceChildren(c.days_left > 0
-      ? h('div', { class: 'wrap free-inner' }, h('span', { class: 'live-dot', 'aria-hidden': 'true' }), h('b', {}, `Noch ${c.days_left} Tage kostenloser Zugang`), h('span', { class: 'muted' }, `endet am ${new Date(c.free_until).toLocaleDateString('de-DE')}. Sag uns, was wir verbessern können.`), h('a', { 'data-route': 'account', href: routeUrl('account') }, 'Konto erstellen →'))
+      ? h('div', { class: 'wrap free-inner' }, h('span', { class: 'live-dot', 'aria-hidden': 'true' }), h('b', {}, `Noch ${c.days_left} Tage kostenlos`), h('span', { class: 'muted' }, `endet am ${new Date(c.free_until).toLocaleDateString('de-DE')}. Sag uns, was wir verbessern können.`), h('a', { 'data-route': 'account', href: routeUrl('account') }, 'Konto erstellen →'))
       : h('div', { class: 'wrap free-inner' }, h('b', {}, 'Die Mitgliedschaft ist jetzt kostenpflichtig'), h('a', { 'data-route': 'pricing', href: routeUrl('pricing') }, 'Zur Mitgliedschaft →')));
     bindLinks(host);
   } catch { host.replaceChildren(); }

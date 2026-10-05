@@ -7,6 +7,7 @@ import { join } from 'node:path';
 const out = process.argv[2] || 'demo-dist';
 mkdirSync(out, { recursive: true });
 const css = readFileSync('public/css/style.css', 'utf8');
+const avatar = `data:image/png;base64,${readFileSync('public/img/avatar.png').toString('base64')}`;
 
 const bundle = async (contents) => (await build({
   stdin: { contents, resolveDir: join(process.cwd(), 'public'), sourcefile: 'entry.js' },
@@ -51,6 +52,7 @@ const html = `<title>Apex Wave Capital</title>
 <div class="demo-banner">Online-Vorschau mit Beispieldaten · bleibt in diesem Browser · <a data-route="admin" href="#admin">Admin öffnen</a> (Passwort <b>demo</b>)</div>
 <div id="view"></div>
 <footer class="site-footer" id="site-footer"></footer>
+<script>window.__AVATAR__ = ${JSON.stringify(avatar)};</script>
 <script>${api}</script>
 <script>${router}</script>
 `;

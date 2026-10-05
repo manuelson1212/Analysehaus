@@ -29,27 +29,47 @@
       <canvas class="atmo" id="atmo" aria-hidden="true"></canvas>
       <div class="hero-veil" aria-hidden="true"></div>
       <div class="wrap hero-inner">
-        <p class="pill"><span class="live-dot" aria-hidden="true"></span><span id="free-pill">Die ersten 30 Tage kostenlos</span></p>
-        <h1>Elliott-Wellen-Analysen,<br><em>die du nachprüfen kannst.</em></h1>
-        <p class="lede">Jede Analyse zeigt Kaufzone, Ziel und das Level, das sie widerlegt. Jeder Call wird in einem Live-Demo-Depot dokumentiert, Gewinne und Verluste inklusive.</p>
-        <div class="cta-row">
-          <a class="btn lg" data-route="account" href="/account">Kostenlos starten</a>
-          <a class="btn lg ghost" data-route="depot" href="/depot">Live-Depot ansehen</a>
+        <div class="hero-copy">
+          <p class="pill"><span class="live-dot" aria-hidden="true"></span><span id="free-pill">Die ersten 30 Tage kostenlos</span></p>
+          <h1>Elliott-Wellen-Analysen,<br><em>die du nachprüfen kannst.</em></h1>
+          <p class="hero-assets">Analysen zu <span class="rot" id="rot">Bitcoin</span></p>
+          <p class="lede">Jede Analyse zeigt Kaufzone, Ziel und das Level, das sie widerlegt. Jeder Call wird in einem Live-Demo-Depot dokumentiert, Gewinne und Verluste inklusive.</p>
+          <div class="cta-row">
+            <a class="btn lg" data-route="account" href="/account">Kostenlos starten</a>
+            <a class="btn lg ghost" data-route="depot" href="/depot">Live-Depot ansehen</a>
+          </div>
+          <p class="fine hero-fine">Keine Zahlungsdaten nötig · jederzeit kündbar</p>
         </div>
+        <figure class="wave-card" id="wave-card">
+          <figcaption class="wave-head"><span class="mono">ELLIOTT-ZÄHLUNG</span><span class="badge">Beispiel</span></figcaption>
+        </figure>
       </div>
     </section>
 
+    <div class="ticker" aria-label="Marktüberblick">
+      <div class="ticker-track" id="ticker-track"></div>
+    </div>
+
     <section class="strip">
       <div class="wrap strip-grid">
-        <div><b id="rate">–</b><span id="rate-sub">Wird geladen…</span></div>
-        <div><b id="n-open">–</b><span>offene Positionen im Depot</span></div>
-        <div><b id="count">–</b><span>veröffentlichte Analysen</span></div>
-        <div><b id="days">30</b><span>Tage kostenloser Zugang</span></div>
+        <div><b class="count" id="rate">–</b><span id="rate-sub">Wird geladen…</span></div>
+        <div><b class="count" id="n-open">–</b><span>offene Positionen im Depot</span></div>
+        <div><b class="count" id="count">–</b><span>veröffentlichte Analysen</span></div>
+        <div><b class="count" id="days">30</b><span>Tage kostenloser Zugang</span></div>
       </div>
       <p class="wrap strip-note">Trefferquote = abgeschlossene Calls, die ihr Ziel vor dem Stop erreicht haben. Simuliertes Demo-Depot ohne echtes Geld. Die Stichprobe wird immer angezeigt.</p>
     </section>
 
     <section class="section wrap">
+      <div class="section-head reveal"><p class="eyebrow">So funktioniert's</p><h2>Erst der Plan, dann der Trade.</h2></div>
+      <ol class="steps">
+        <li class="step reveal"><b>Analyse</b><p>Chart mit Wellenzählung, Haupt- und Alternativszenario nach Prechter und Frost.</p></li>
+        <li class="step reveal"><b>Kaufzone</b><p>Einstieg, Stop und Ziel stehen fest, bevor der Kurs dort ist. Nichts wird nachträglich angepasst.</p></li>
+        <li class="step reveal"><b>Ergebnis</b><p>Jeder Call landet im Live-Depot. Treffer und Verluste bleiben sichtbar, die Trefferquote rechnet sich selbst.</p></li>
+      </ol>
+    </section>
+
+    <section class="section wrap pt0">
       <div class="section-head row-between reveal">
         <div><p class="eyebrow">Analysen</p><h2>Neueste Analysen</h2></div>
         <a class="link-arrow" data-route="analyses" href="/analyses">Alle Analysen →</a>
@@ -69,6 +89,29 @@
     </section>
 
     <section class="section wrap">
+      <div class="about reveal">
+        <img class="about-avatar" src="/img/avatar.png" alt="Apex Wave Capital Logo" width="160" height="160" id="about-avatar">
+        <div>
+          <p class="eyebrow">Hinter Apex Wave Capital</p>
+          <h2>Klare Zählung. Klare Level. Keine Ausreden.</h2>
+          <p class="about-text" id="about-text"></p>
+          <div id="about-social"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section wrap pt0">
+      <div class="section-head reveal"><p class="eyebrow">Fragen</p><h2>Häufige Fragen</h2></div>
+      <div class="faq-list reveal">
+        <details class="faq"><summary>Was ist die Elliott-Wellen-Methode?</summary><p>Eine Methode der Chartanalyse, die Kursbewegungen in wiederkehrende Muster einteilt: fünf Wellen in Trendrichtung (1 bis 5) und drei Wellen dagegen (A, B, C). Ich arbeite nach den klassischen Regeln von Prechter und Frost.</p></details>
+        <details class="faq"><summary>Ist das eine Anlageberatung?</summary><p>Nein. Die Analysen dienen der Bildung und Information. Sie sind keine Empfehlung, ein bestimmtes Finanzinstrument zu kaufen oder zu verkaufen. Jede Entscheidung triffst du selbst und auf eigenes Risiko.</p></details>
+        <details class="faq"><summary>Was ist das Live-Demo-Depot?</summary><p>Ein simuliertes Depot ohne echtes Geld. Jede Position wird mit Kaufzone, Stop und Ziel eingetragen, bevor der Kurs dort ist, und bleibt danach sichtbar, egal ob Treffer oder Verlust.</p></details>
+        <details class="faq"><summary>Was kostet die Mitgliedschaft?</summary><p id="faq-price">Die ersten 30 Tage sind kostenlos und ohne Zahlungsdaten. Danach kostet die Mitgliedschaft einen festen Monatsbetrag. Chart, Wellenzählung und die komplette Erfolgsbilanz bleiben immer öffentlich.</p></details>
+        <details class="faq"><summary>Wie kann ich kündigen?</summary><p>Monatlich zum Ende des Abrechnungszeitraums, im Konto unter „Abo verwalten“ oder über „Verträge hier kündigen“ unten auf jeder Seite.</p></details>
+      </div>
+    </section>
+
+    <section class="section wrap pt0">
       <div class="free-card reveal">
         <div>
           <p class="eyebrow">Gründer-Zugang</p>
@@ -79,6 +122,10 @@
       </div>
     </section>
   </main>
+  <div class="sticky-cta" id="sticky-cta" hidden>
+    <span><b>30 Tage kostenlos</b><span class="muted">Keine Zahlungsdaten</span></span>
+    <a class="btn" data-route="account" href="/account">Kostenlos starten</a>
+  </div>
   <footer class="site-footer" id="site-footer"></footer>
   <script type="module" src="/js/layout.js"></script>
   <script type="module" src="/js/home.js"></script>
