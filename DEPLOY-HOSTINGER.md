@@ -28,16 +28,14 @@ Die Umstellung braucht meist wenige Minuten, manchmal bis zu einigen Stunden.
 Im hPanel beim VPS auf **Browser-Terminal** klicken (oder per SSH verbinden) und nacheinander eingeben:
 
 ```bash
-# Nur nötig, wenn Docker noch nicht installiert ist:
-curl -fsSL https://get.docker.com | sh
-
-git clone -b claude/finance-platform-ai-marketing-b6habe https://github.com/manuelson1212/Analysehaus.git
+git clone https://github.com/manuelson1212/Analysehaus.git
 cd Analysehaus
-cp deploy/env.example .env
-openssl rand -hex 32     # zweimal ausführen: einmal für SESSION_SECRET, einmal als ADMIN_PASSWORD
-nano .env                # Werte eintragen, speichern mit Strg+O, Enter, Strg+X
-docker compose up -d --build
+bash deploy/setup.sh
 ```
+
+Das Skript installiert Docker (falls nötig), legt die Einstellungen in `.env` mit zufälligen Geheimwerten an,
+zeigt dir einmal dein **Admin-Passwort** (sicher aufschreiben) und startet die Seite.
+Weitere Werte (API-Schlüssel, Stripe) trägst du später mit `nano .env` ein und startest mit `bash deploy/setup.sh` neu.
 
 Nach etwa einer Minute ist die Seite unter **https://apexwave.pro** erreichbar. Das HTTPS-Zertifikat holt sich der
 Server automatisch. `https://apexwave.pro/healthz` sollte `ok` anzeigen. `www.apexwave.pro` leitet automatisch weiter.
@@ -48,13 +46,13 @@ Falls es nicht klappt: `docker compose logs --tail 50` zeigt, was los ist. Meist
 
 1. `https://apexwave.pro/admin` öffnen, mit dem ADMIN_PASSWORD einloggen.
 2. **Einstellungen**: Ende der kostenlosen Phase, Preis, Kleinunternehmer-Haken, Impressum, Datenschutz, AGB.
-3. KI-Agent: `ANTHROPIC_API_KEY` in `.env` eintragen, `AGENT_PROVIDER=claude` setzen, dann `docker compose up -d`.
+3. KI-Agent: `ANTHROPIC_API_KEY` in `.env` eintragen, `AGENT_PROVIDER=claude` setzen, dann `bash deploy/setup.sh`.
 4. Stripe: siehe `DEPLOY.md`. Die Webhook-Adresse ist `https://apexwave.pro/api/stripe/webhook`.
 
 ## Updates einspielen
 
 ```bash
-cd Analysehaus && git pull && docker compose up -d --build
+cd Analysehaus && git pull && bash deploy/setup.sh
 ```
 
 Datenbank und hochgeladene Charts liegen in einem eigenen Docker-Volume und bleiben bei Updates erhalten.
