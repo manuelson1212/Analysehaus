@@ -34,6 +34,9 @@ const SECURITY_HEADERS = {
   'Content-Security-Policy':
     "default-src 'self'; img-src 'self' blob: data:; style-src 'self'; script-src 'self'; frame-ancestors 'none'",
 };
+// Only the markets page may load the TradingView chart embed (after the visitor agrees on the page).
+const MARKETS_CSP = "default-src 'self'; img-src 'self' blob: data: https://*.tradingview.com; style-src 'self' 'unsafe-inline'; "
+  + "script-src 'self' https://s3.tradingview.com; frame-src https://*.tradingview.com https://*.tradingview-widget.com; frame-ancestors 'none'";
 
 function send(res, status, body, headers = {}) {
   res.writeHead(status, { ...SECURITY_HEADERS, ...headers });
@@ -136,14 +139,14 @@ const DUMMY_HASH = await hashPassword('dummy-password-for-timing');
 const COMPRESSIBLE = new Set(['.html', '.css', '.js', '.svg', '.json']);
 const gzCache = new Map();
 
-async function serveFile(req, res, path, cache, status = 200) {
+async function serveFile(req, res, path, cache, status = 200, extra = {}) {
   try {
     const st = await stat(path);
     if (!st.isFile()) throw new Error('not a file');
     const ext = extname(path);
     // ETag lets browsers revalidate cheaply, so a new release shows up on the next page load (304 when unchanged).
     const etag = `"${st.size.toString(36)}-${Math.round(st.mtimeMs).toString(36)}"`;
-    const headers = { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': cache, Vary: 'Accept-Encoding', ETag: etag };
+    const headers = { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': cache, Vary: 'Accept-Encoding', ETag: etag, ...extra };
     if (status === 200 && req.headers['if-none-match'] === etag && ext !== '.html') return send(res, 304, '', { ETag: etag, 'Cache-Control': cache });
     let body = await readFile(path);
     // HTML may reference absolute URLs (link previews need them): fill in this site's address.
@@ -456,7 +459,7 @@ const server = createServer(async (req, res) => {
     }
     if (url.pathname === '/sitemap.xml') {
       const base = publicUrl(req);
-      const urls = ['/', '/analyses', '/depot', '/pricing', '/support', ...analyses.list(true).map((a) => `/analysis?id=${a.id}`)];
+      const urls = ['/', '/analyses', '/markets', '/depot', '/pricing', '/support', ...analyses.list(true).map((a) => `/analysis?id=${a.id}`)];
       const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `  <url><loc>${base}${u.replace(/&/g, '&amp;')}</loc></url>`).join('\n')}\n</urlset>\n`;
       return send(res, 200, xml, { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' });
     }
@@ -469,12 +472,13 @@ const server = createServer(async (req, res) => {
     }
 
     const pages = { '/': '/index.html', '/analyses': '/analyses.html', '/analysis': '/analysis.html',
-      '/pricing': '/pricing.html', '/support': '/support.html', '/depot': '/depot.html', '/admin': '/admin.html',
+      '/pricing': '/pricing.html', '/support': '/support.html', '/depot': '/depot.html', '/markets': '/markets.html', '/admin': '/admin.html',
       '/account': '/account.html', '/kuendigen': '/cancel.html', '/imprint': '/legal.html', '/privacy': '/legal.html', '/terms': '/legal.html' };
     const clean = pages[url.pathname] || url.pathname;
     const file = normalize(join(PUBLIC_DIR, clean));
     if (!file.startsWith(PUBLIC_DIR + sep)) return send(res, 403, 'Forbidden');
-    return await serveFile(req, res, file, extname(file) === '.html' || ['.js', '.css'].includes(extname(file)) ? 'no-cache' : 'public, max-age=3600');
+    const extra = clean === '/markets.html' ? { 'Content-Security-Policy': MARKETS_CSP } : {};
+    return await serveFile(req, res, file, extname(file) === '.html' || ['.js', '.css'].includes(extname(file)) ? 'no-cache' : 'public, max-age=3600', 200, extra);
   } catch (e) {
     if (e instanceof HttpError) return json(res, e.status, { error: e.message });
     console.error(e);

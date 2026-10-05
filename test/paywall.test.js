@@ -168,3 +168,12 @@ test('HTML gets the public address for link previews', async () => {
   assert.doesNotMatch(html, /%PUBLIC_URL%/);
   for (const f of ['/favicon.svg', '/favicon-32.png', '/apple-touch-icon.png', '/og-image.png']) assert.equal((await fetch(B + f)).status, 200, f);
 });
+
+test('only the markets page may load the TradingView embed', async () => {
+  const markets = await fetch(B + '/markets'), home = await fetch(B + '/');
+  assert.equal(markets.status, 200);
+  assert.match(markets.headers.get('content-security-policy'), /script-src 'self' https:\/\/s3\.tradingview\.com/);
+  assert.doesNotMatch(home.headers.get('content-security-policy'), /tradingview/);
+  const js = await fetch(B + '/js/home.js');
+  assert.equal((await fetch(B + '/js/home.js', { headers: { 'If-None-Match': js.headers.get('etag') } })).status, 304);
+});

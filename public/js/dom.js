@@ -31,7 +31,7 @@ export const imgUrl = (image) => (String(image).startsWith('data:') ? image : `/
 export const detailUrl = (id) => (window.__DEMO__ ? `#analysis-${id}` : `/analysis?id=${id}`);
 
 // Site routes. In the static demo, pages are hash routes inside one document.
-const ROUTES = { home: '/', analyses: '/analyses', depot: '/depot', pricing: '/pricing', support: '/support', admin: '/admin', account: '/account', cancel: '/kuendigen', imprint: '/imprint', privacy: '/privacy', terms: '/terms' };
+const ROUTES = { home: '/', analyses: '/analyses', markets: '/markets', depot: '/depot', pricing: '/pricing', support: '/support', admin: '/admin', account: '/account', cancel: '/kuendigen', imprint: '/imprint', privacy: '/privacy', terms: '/terms' };
 export const routeUrl = (name) => (window.__DEMO__ ? `#${name}` : ROUTES[name]);
 
 // Points every <a data-route="..."> at the right URL for the current build.

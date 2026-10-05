@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Märkte · Apex Wave Capital</title>
+  <meta name="description" content="Live-Charts zu Bitcoin, Ethereum, Solana, Nasdaq 100 und S&amp;P 500, mit der passenden Elliott-Wellen-Analyse.">
+  <meta property="og:site_name" content="Apex Wave Capital">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Märkte · Apex Wave Capital">
+  <meta property="og:description" content="Live-Charts zu Bitcoin, Ethereum, Solana, Nasdaq 100 und S&amp;P 500, mit der passenden Elliott-Wellen-Analyse.">
+  <meta property="og:image" content="%PUBLIC_URL%/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="%PUBLIC_URL%/og-image.png">
+  <meta name="theme-color" content="#08090b">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <script src="/js/lang-boot.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body data-page="markets">
+  <a class="skip" href="#main">Zum Inhalt springen</a>
+  <header class="site-header" id="site-header"></header>
+  <div class="free-bar" id="free-bar"></div>
+  <main id="main" class="wrap">
+    <section class="page-head">
+      <p class="eyebrow">Märkte</p>
+      <h1>Live-Charts, die wir zählen.</h1>
+      <p class="lede">Bitcoin, Ethereum, Solana, Nasdaq 100 und S&amp;P 500 im Live-Chart. Zu jedem Markt erscheint hier die aktuelle Elliott-Wellen-Analyse.</p>
+    </section>
+    <div class="market-tabs" id="market-tabs" role="tablist" aria-label="Markt wählen"></div>
+    <section class="market-view" id="market-view" aria-live="polite"></section>
+    <p class="fine market-note">Charts von TradingView. Kurse können verzögert sein. Keine Anlageberatung.</p>
+  </main>
+  <footer class="site-footer" id="site-footer"></footer>
+  <script type="module" src="/js/layout.js"></script>
+  <script type="module" src="/js/markets.js"></script>
+</body>
+</html>

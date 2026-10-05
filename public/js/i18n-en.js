@@ -92,6 +92,18 @@ export const EN = {
   'Analyse · Apex Wave Capital': 'Analysis · Apex Wave Capital',
   'Elliott-Wellen-Analyse mit Wellenzählung, Szenarien, Zielen und Invalidierung.': 'Elliott wave analysis with wave count, scenarios, targets and invalidation.',
 
+  // Markets
+  Märkte: 'Markets', 'Märkte · Apex Wave Capital': 'Markets · Apex Wave Capital',
+  'Live-Charts zu Bitcoin, Ethereum, Solana, Nasdaq 100 und S&P 500, mit der passenden Elliott-Wellen-Analyse.': 'Live charts of Bitcoin, Ethereum, Solana, Nasdaq 100 and S&P 500, with the matching Elliott wave analysis.',
+  'Live-Charts, die wir zählen.': 'Live charts we count.',
+  'Bitcoin, Ethereum, Solana, Nasdaq 100 und S&P 500 im Live-Chart. Zu jedem Markt erscheint hier die aktuelle Elliott-Wellen-Analyse.': 'Bitcoin, Ethereum, Solana, Nasdaq 100 and S&P 500 in a live chart. The current Elliott wave analysis for each market appears here.',
+  'Markt wählen': 'Choose a market', Aktienindex: 'Stock index', 'Auf TradingView öffnen ↗': 'Open on TradingView ↗',
+  'Der Chart wird von TradingView geladen. Dabei werden Daten wie deine IP-Adresse an TradingView (USA) übertragen und TradingView kann Cookies setzen.':
+    'The chart is loaded from TradingView. Data such as your IP address is sent to TradingView (USA), and TradingView may set cookies.',
+  'Live-Chart laden': 'Load live chart', 'Charts künftig automatisch laden': 'Load charts automatically from now on', 'Mehr in der Datenschutzerklärung': 'More in the privacy policy',
+  'Elliott-Wellen-Analyse': 'Elliott wave analysis', 'Analyse folgt in Kürze.': 'Analysis coming soon.',
+  'Charts von TradingView. Kurse können verzögert sein. Keine Anlageberatung.': 'Charts by TradingView. Prices may be delayed. No investment advice.',
+
   // Depot
   'Live-Depot · Apex Wave Capital': 'Live portfolio · Apex Wave Capital',
   'Ein simuliertes Live-Depot, das jeden Call mit Kaufzone, Stop, Ziel und Nachweis dokumentiert.': 'A simulated live portfolio that documents every call with buy zone, stop, target and proof.',
@@ -224,6 +236,8 @@ export const EN = {
 
 const n = (s) => s; // numbers and dates are already formatted for the current language by the scripts
 export const RULES = [
+  [/^(.+) Live-Chart$/, '$1 live chart'],
+  [/^Die Elliott-Wellen-Zählung zu (.+) ist in Arbeit\. Folge mir, damit du sie nicht verpasst\.$/, "The Elliott wave count for $1 is in progress. Follow me so you don't miss it."],
   [/^Noch (\d+) Tage kostenlos$/, '$1 days of free access left'],
   [/^endet am (.+)\. Sag uns, was wir verbessern können\.$/, 'ends on $1. Tell us what we can improve.'],
   [/^Die ersten 30 Tage kostenlos · noch (\d+) Tage$/, 'First 30 days free · $1 days left'],

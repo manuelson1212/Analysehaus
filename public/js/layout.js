@@ -3,7 +3,7 @@ import { h, api, bindLinks, routeUrl } from './dom.js';
 import { loc, lang, setLang, startTranslation } from './i18n.js';
 import { socialLinks } from './social.js';
 
-const NAV = [['home', 'Start'], ['analyses', 'Analysen'], ['depot', 'Live-Depot'], ['pricing', 'Preise'], ['support', 'Kontakt']];
+const NAV = [['home', 'Start'], ['analyses', 'Analysen'], ['markets', 'Märkte'], ['depot', 'Live-Depot'], ['pricing', 'Preise'], ['support', 'Kontakt']];
 
 // DE | EN switch. The labels are language names, so they stay the same in both languages.
 function langSwitch() {
