@@ -177,3 +177,13 @@ test('only the markets page may load the TradingView embed', async () => {
   const js = await fetch(B + '/js/home.js');
   assert.equal((await fetch(B + '/js/home.js', { headers: { 'If-None-Match': js.headers.get('etag') } })).status, 304);
 });
+
+test('scripts and styles get versioned URLs so releases are never mixed with cached files', async () => {
+  const html = await (await fetch(B + '/')).text();
+  const path = /src="(\/v\/[a-z0-9]+\/js\/layout\.js)"/.exec(html)?.[1];
+  assert.ok(path, 'layout.js is versioned');
+  assert.doesNotMatch(html, /(src|href)="\/(js|css)\//);
+  const r = await fetch(B + path);
+  assert.equal(r.status, 200); assert.match(r.headers.get('cache-control'), /immutable/);
+  assert.equal((await fetch(B + '/v/abc/../server.js')).status, 404);
+});

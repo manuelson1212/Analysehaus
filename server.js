@@ -19,6 +19,9 @@ import { generatePack, generatePromoPack, generateBriefingRecord, finalize, test
 
 const PUBLIC_DIR = join(fileURLToPath(new URL('.', import.meta.url)), 'public');
 const PORT = Number(process.env.PORT || 3000);
+// Scripts and styles are served under /v/<build>/ so every release gets fresh URLs: browsers can cache them for good
+// and still never mix an old script with a new page. ES module imports resolve relative to that path, so they follow.
+const BUILD = process.env.BUILD_ID || Date.now().toString(36);
 const MAX_BODY = 12 * 1024 * 1024;
 
 const MIME = {
@@ -151,7 +154,7 @@ async function serveFile(req, res, path, cache, status = 200, extra = {}) {
     let body = await readFile(path);
     // HTML may reference absolute URLs (link previews need them): fill in this site's address.
     const base = ext === '.html' ? publicUrl(req) : '';
-    if (base) body = Buffer.from(body.toString('utf8').replaceAll('%PUBLIC_URL%', base));
+    if (base) body = Buffer.from(body.toString('utf8').replaceAll('%PUBLIC_URL%', base).replace(/(src|href)="\/(js|css)\//g, `$1="/v/${BUILD}/$2/`));
     if (COMPRESSIBLE.has(ext) && body.length > 1024 && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) {
       const key = `${path}|${base}`, hit = gzCache.get(key);
       if (hit?.mtime === st.mtimeMs) body = hit.data;
@@ -464,6 +467,9 @@ const server = createServer(async (req, res) => {
       return send(res, 200, xml, { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' });
     }
     if (url.pathname.startsWith('/api/')) return await api(req, res, url);
+
+    const versioned = /^\/v\/[a-z0-9]{1,20}(\/(?:js|css)\/[\w.-]+)$/.exec(url.pathname);
+    if (versioned) return await serveFile(req, res, join(PUBLIC_DIR, versioned[1]), 'public, max-age=31536000, immutable');
 
     if (url.pathname.startsWith('/uploads/')) {
       const name = url.pathname.slice('/uploads/'.length);
