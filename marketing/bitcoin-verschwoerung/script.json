@@ -1,0 +1,53 @@
+{
+  "_note": "say = what the voice reads (spelled for TTS), show = the on-screen caption. Edit both, then run tools/build.py.",
+  "scenes": [
+    {
+      "id": "hook",
+      "lines": [
+        { "say": "Wurde Bitcoin vom Geheimdienst erfunden?", "show": "Wurde Bitcoin vom Geheimdienst erfunden?" },
+        { "say": "Fünf Bitcoin-Verschwörungstheorien. Bei Nummer vier wirst du sofort nachschauen.", "show": "5 Bitcoin- Verschwörungstheorien. Bei Nr. 4 wirst du sofort nachschauen." }
+      ]
+    },
+    {
+      "id": "nsa",
+      "lines": [
+        { "say": "Nummer eins. Neunzehnhundertsechsundneunzig veröffentlichen Forscher der N S A ein Paper über anonymes, digitales Geld.", "show": "Nr. 1: 1996 veröffentlichen NSA-Forscher ein Paper über anonymes, digitales Geld." },
+        { "say": "Zwölf Jahre vor Bitcoin. Ein Beweis, dass die N S A Bitcoin gebaut hat? Gibt es nicht.", "show": "12 Jahre vor Bitcoin. Ein Beweis, dass die NSA Bitcoin gebaut hat? Gibt es nicht." }
+      ]
+    },
+    {
+      "id": "name",
+      "lines": [
+        { "say": "Nummer zwei. Satoshi Nakamoto.", "show": "Nr. 2: Satoshi Nakamoto." },
+        { "say": "Samsung. Toshiba. Nakamichi. Motorola. Vier Tech-Konzerne in einem Namen. Zufall?", "show": "SAmsung. TOSHIba. NAKAmichi. MOTOrola. Vier Tech-Konzerne in einem Namen. Zufall?" }
+      ]
+    },
+    {
+      "id": "coins",
+      "lines": [
+        { "say": "Nummer drei. Satoshi soll rund eine Million Bitcoin besitzen.", "show": "Nr. 3: Satoshi soll rund 1 Million Bitcoin besitzen." },
+        { "say": "Seit über fünfzehn Jahren nicht bewegt. Wer hat den Schlüssel?", "show": "Seit über 15 Jahren nicht bewegt. Wer hat den Schlüssel?" }
+      ]
+    },
+    {
+      "id": "mac",
+      "lines": [
+        { "say": "Nummer vier. Auf Millionen Macs war das Bitcoin-Whitepaper versteckt.", "show": "Nr. 4: Auf Millionen Macs war das Bitcoin-Whitepaper versteckt." },
+        { "say": "Seit zweitausendachtzehn im System. Entdeckt erst zweitausenddreiundzwanzig. Das ist echt.", "show": "Seit 2018 im System. Entdeckt erst 2023. Das ist echt." }
+      ]
+    },
+    {
+      "id": "genesis",
+      "lines": [
+        { "say": "Nummer fünf. Im allerersten Bitcoin-Block steht eine Zeitungsschlagzeile.", "show": "Nr. 5: Im allerersten Bitcoin-Block steht eine Zeitungsschlagzeile." },
+        { "say": "Über die zweite Rettung der Banken. Eine Botschaft für immer in der Blockchain.", "show": "Über die zweite Rettung der Banken. Eine Botschaft für immer in der Blockchain." }
+      ]
+    },
+    {
+      "id": "cta",
+      "lines": [
+        { "say": "Welche Theorie glaubst du? Schreib die Nummer in die Kommentare. Und folge für Teil zwei.", "show": "Welche Theorie glaubst du? Schreib die Nummer in die Kommentare. Folge für Teil 2." }
+      ]
+    }
+  ]
+}

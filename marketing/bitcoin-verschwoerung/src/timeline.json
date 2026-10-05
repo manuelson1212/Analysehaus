@@ -1,0 +1,806 @@
+{
+ "fps": 30,
+ "durationInFrames": 1730,
+ "scenes": [
+  {
+   "id": "hook",
+   "from": 0,
+   "durationInFrames": 199,
+   "stamp": 160,
+   "lines": [
+    {
+     "key": "hook-0",
+     "show": "Wurde Bitcoin vom Geheimdienst erfunden?",
+     "from": 4,
+     "to": 60,
+     "words": [
+      {
+       "text": "Wurde",
+       "from": 4,
+       "to": 13
+      },
+      {
+       "text": "Bitcoin",
+       "from": 13,
+       "to": 24
+      },
+      {
+       "text": "vom",
+       "from": 24,
+       "to": 31
+      },
+      {
+       "text": "Geheimdienst",
+       "from": 31,
+       "to": 48
+      },
+      {
+       "text": "erfunden?",
+       "from": 48,
+       "to": 60
+      }
+     ]
+    },
+    {
+     "key": "hook-1",
+     "show": "5 Bitcoin- Verschwörungstheorien. Bei Nr. 4 wirst du sofort nachschauen.",
+     "from": 65,
+     "to": 176,
+     "words": [
+      {
+       "text": "5",
+       "from": 65,
+       "to": 69
+      },
+      {
+       "text": "Bitcoin-",
+       "from": 69,
+       "to": 82
+      },
+      {
+       "text": "Verschwörungstheorien.",
+       "from": 82,
+       "to": 114
+      },
+      {
+       "text": "Bei",
+       "from": 114,
+       "to": 121
+      },
+      {
+       "text": "Nr.",
+       "from": 121,
+       "to": 127
+      },
+      {
+       "text": "4",
+       "from": 127,
+       "to": 131
+      },
+      {
+       "text": "wirst",
+       "from": 131,
+       "to": 141
+      },
+      {
+       "text": "du",
+       "from": 141,
+       "to": 147
+      },
+      {
+       "text": "sofort",
+       "from": 147,
+       "to": 158
+      },
+      {
+       "text": "nachschauen.",
+       "from": 158,
+       "to": 176
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "nsa",
+   "from": 199,
+   "durationInFrames": 365,
+   "stamp": 327,
+   "lines": [
+    {
+     "key": "nsa-0",
+     "show": "Nr. 1: 1996 veröffentlichen NSA-Forscher ein Paper über anonymes, digitales Geld.",
+     "from": 8,
+     "to": 194,
+     "words": [
+      {
+       "text": "Nr.",
+       "from": 8,
+       "to": 16
+      },
+      {
+       "text": "1:",
+       "from": 16,
+       "to": 22
+      },
+      {
+       "text": "1996",
+       "from": 22,
+       "to": 35
+      },
+      {
+       "text": "veröffentlichen",
+       "from": 35,
+       "to": 71
+      },
+      {
+       "text": "NSA-Forscher",
+       "from": 71,
+       "to": 99
+      },
+      {
+       "text": "ein",
+       "from": 99,
+       "to": 109
+      },
+      {
+       "text": "Paper",
+       "from": 109,
+       "to": 124
+      },
+      {
+       "text": "über",
+       "from": 124,
+       "to": 137
+      },
+      {
+       "text": "anonymes,",
+       "from": 137,
+       "to": 158
+      },
+      {
+       "text": "digitales",
+       "from": 158,
+       "to": 181
+      },
+      {
+       "text": "Geld.",
+       "from": 181,
+       "to": 194
+      }
+     ]
+    },
+    {
+     "key": "nsa-1",
+     "show": "12 Jahre vor Bitcoin. Ein Beweis, dass die NSA Bitcoin gebaut hat? Gibt es nicht.",
+     "from": 198,
+     "to": 343,
+     "words": [
+      {
+       "text": "12",
+       "from": 198,
+       "to": 205
+      },
+      {
+       "text": "Jahre",
+       "from": 205,
+       "to": 216
+      },
+      {
+       "text": "vor",
+       "from": 216,
+       "to": 223
+      },
+      {
+       "text": "Bitcoin.",
+       "from": 223,
+       "to": 237
+      },
+      {
+       "text": "Ein",
+       "from": 237,
+       "to": 245
+      },
+      {
+       "text": "Beweis,",
+       "from": 245,
+       "to": 258
+      },
+      {
+       "text": "dass",
+       "from": 258,
+       "to": 267
+      },
+      {
+       "text": "die",
+       "from": 267,
+       "to": 275
+      },
+      {
+       "text": "NSA",
+       "from": 275,
+       "to": 282
+      },
+      {
+       "text": "Bitcoin",
+       "from": 282,
+       "to": 296
+      },
+      {
+       "text": "gebaut",
+       "from": 296,
+       "to": 309
+      },
+      {
+       "text": "hat?",
+       "from": 309,
+       "to": 317
+      },
+      {
+       "text": "Gibt",
+       "from": 317,
+       "to": 326
+      },
+      {
+       "text": "es",
+       "from": 326,
+       "to": 332
+      },
+      {
+       "text": "nicht.",
+       "from": 332,
+       "to": 343
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "name",
+   "from": 564,
+   "durationInFrames": 252,
+   "stamp": 214,
+   "lines": [
+    {
+     "key": "name-0",
+     "show": "Nr. 2: Satoshi Nakamoto.",
+     "from": 8,
+     "to": 64,
+     "words": [
+      {
+       "text": "Nr.",
+       "from": 8,
+       "to": 16
+      },
+      {
+       "text": "2:",
+       "from": 16,
+       "to": 23
+      },
+      {
+       "text": "Satoshi",
+       "from": 23,
+       "to": 42
+      },
+      {
+       "text": "Nakamoto.",
+       "from": 42,
+       "to": 64
+      }
+     ]
+    },
+    {
+     "key": "name-1",
+     "show": "SAmsung. TOSHIba. NAKAmichi. MOTOrola. Vier Tech-Konzerne in einem Namen. Zufall?",
+     "from": 68,
+     "to": 230,
+     "words": [
+      {
+       "text": "SAmsung.",
+       "from": 68,
+       "to": 85
+      },
+      {
+       "text": "TOSHIba.",
+       "from": 85,
+       "to": 102
+      },
+      {
+       "text": "NAKAmichi.",
+       "from": 102,
+       "to": 123
+      },
+      {
+       "text": "MOTOrola.",
+       "from": 123,
+       "to": 142
+      },
+      {
+       "text": "Vier",
+       "from": 142,
+       "to": 154
+      },
+      {
+       "text": "Tech-Konzerne",
+       "from": 154,
+       "to": 180
+      },
+      {
+       "text": "in",
+       "from": 180,
+       "to": 188
+      },
+      {
+       "text": "einem",
+       "from": 188,
+       "to": 201
+      },
+      {
+       "text": "Namen.",
+       "from": 201,
+       "to": 214
+      },
+      {
+       "text": "Zufall?",
+       "from": 214,
+       "to": 230
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "coins",
+   "from": 816,
+   "durationInFrames": 209,
+   "stamp": 170,
+   "lines": [
+    {
+     "key": "coins-0",
+     "show": "Nr. 3: Satoshi soll rund 1 Million Bitcoin besitzen.",
+     "from": 8,
+     "to": 94,
+     "words": [
+      {
+       "text": "Nr.",
+       "from": 8,
+       "to": 13
+      },
+      {
+       "text": "3:",
+       "from": 13,
+       "to": 18
+      },
+      {
+       "text": "Satoshi",
+       "from": 18,
+       "to": 31
+      },
+      {
+       "text": "soll",
+       "from": 31,
+       "to": 40
+      },
+      {
+       "text": "rund",
+       "from": 40,
+       "to": 49
+      },
+      {
+       "text": "1",
+       "from": 49,
+       "to": 53
+      },
+      {
+       "text": "Million",
+       "from": 53,
+       "to": 66
+      },
+      {
+       "text": "Bitcoin",
+       "from": 66,
+       "to": 80
+      },
+      {
+       "text": "besitzen.",
+       "from": 80,
+       "to": 94
+      }
+     ]
+    },
+    {
+     "key": "coins-1",
+     "show": "Seit über 15 Jahren nicht bewegt. Wer hat den Schlüssel?",
+     "from": 99,
+     "to": 186,
+     "words": [
+      {
+       "text": "Seit",
+       "from": 99,
+       "to": 107
+      },
+      {
+       "text": "über",
+       "from": 107,
+       "to": 115
+      },
+      {
+       "text": "15",
+       "from": 115,
+       "to": 120
+      },
+      {
+       "text": "Jahren",
+       "from": 120,
+       "to": 131
+      },
+      {
+       "text": "nicht",
+       "from": 131,
+       "to": 140
+      },
+      {
+       "text": "bewegt.",
+       "from": 140,
+       "to": 151
+      },
+      {
+       "text": "Wer",
+       "from": 151,
+       "to": 158
+      },
+      {
+       "text": "hat",
+       "from": 158,
+       "to": 164
+      },
+      {
+       "text": "den",
+       "from": 164,
+       "to": 171
+      },
+      {
+       "text": "Schlüssel?",
+       "from": 171,
+       "to": 186
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "mac",
+   "from": 1025,
+   "durationInFrames": 286,
+   "stamp": 248,
+   "lines": [
+    {
+     "key": "mac-0",
+     "show": "Nr. 4: Auf Millionen Macs war das Bitcoin-Whitepaper versteckt.",
+     "from": 8,
+     "to": 113,
+     "words": [
+      {
+       "text": "Nr.",
+       "from": 8,
+       "to": 14
+      },
+      {
+       "text": "4:",
+       "from": 14,
+       "to": 18
+      },
+      {
+       "text": "Auf",
+       "from": 18,
+       "to": 26
+      },
+      {
+       "text": "Millionen",
+       "from": 26,
+       "to": 43
+      },
+      {
+       "text": "Macs",
+       "from": 43,
+       "to": 52
+      },
+      {
+       "text": "war",
+       "from": 52,
+       "to": 59
+      },
+      {
+       "text": "das",
+       "from": 59,
+       "to": 67
+      },
+      {
+       "text": "Bitcoin-Whitepaper",
+       "from": 67,
+       "to": 96
+      },
+      {
+       "text": "versteckt.",
+       "from": 96,
+       "to": 113
+      }
+     ]
+    },
+    {
+     "key": "mac-1",
+     "show": "Seit 2018 im System. Entdeckt erst 2023. Das ist echt.",
+     "from": 117,
+     "to": 264,
+     "words": [
+      {
+       "text": "Seit",
+       "from": 117,
+       "to": 131
+      },
+      {
+       "text": "2018",
+       "from": 131,
+       "to": 146
+      },
+      {
+       "text": "im",
+       "from": 146,
+       "to": 155
+      },
+      {
+       "text": "System.",
+       "from": 155,
+       "to": 174
+      },
+      {
+       "text": "Entdeckt",
+       "from": 174,
+       "to": 198
+      },
+      {
+       "text": "erst",
+       "from": 198,
+       "to": 212
+      },
+      {
+       "text": "2023.",
+       "from": 212,
+       "to": 226
+      },
+      {
+       "text": "Das",
+       "from": 226,
+       "to": 238
+      },
+      {
+       "text": "ist",
+       "from": 238,
+       "to": 249
+      },
+      {
+       "text": "echt.",
+       "from": 249,
+       "to": 264
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "genesis",
+   "from": 1311,
+   "durationInFrames": 249,
+   "stamp": 210,
+   "lines": [
+    {
+     "key": "genesis-0",
+     "show": "Nr. 5: Im allerersten Bitcoin-Block steht eine Zeitungsschlagzeile.",
+     "from": 8,
+     "to": 118,
+     "words": [
+      {
+       "text": "Nr.",
+       "from": 8,
+       "to": 14
+      },
+      {
+       "text": "5:",
+       "from": 14,
+       "to": 18
+      },
+      {
+       "text": "Im",
+       "from": 18,
+       "to": 24
+      },
+      {
+       "text": "allerersten",
+       "from": 24,
+       "to": 44
+      },
+      {
+       "text": "Bitcoin-Block",
+       "from": 44,
+       "to": 66
+      },
+      {
+       "text": "steht",
+       "from": 66,
+       "to": 77
+      },
+      {
+       "text": "eine",
+       "from": 77,
+       "to": 86
+      },
+      {
+       "text": "Zeitungsschlagzeile.",
+       "from": 86,
+       "to": 118
+      }
+     ]
+    },
+    {
+     "key": "genesis-1",
+     "show": "Über die zweite Rettung der Banken. Eine Botschaft für immer in der Blockchain.",
+     "from": 123,
+     "to": 226,
+     "words": [
+      {
+       "text": "Über",
+       "from": 123,
+       "to": 130
+      },
+      {
+       "text": "die",
+       "from": 130,
+       "to": 135
+      },
+      {
+       "text": "zweite",
+       "from": 135,
+       "to": 144
+      },
+      {
+       "text": "Rettung",
+       "from": 144,
+       "to": 155
+      },
+      {
+       "text": "der",
+       "from": 155,
+       "to": 160
+      },
+      {
+       "text": "Banken.",
+       "from": 160,
+       "to": 169
+      },
+      {
+       "text": "Eine",
+       "from": 169,
+       "to": 176
+      },
+      {
+       "text": "Botschaft",
+       "from": 176,
+       "to": 189
+      },
+      {
+       "text": "für",
+       "from": 189,
+       "to": 195
+      },
+      {
+       "text": "immer",
+       "from": 195,
+       "to": 202
+      },
+      {
+       "text": "in",
+       "from": 202,
+       "to": 207
+      },
+      {
+       "text": "der",
+       "from": 207,
+       "to": 213
+      },
+      {
+       "text": "Blockchain.",
+       "from": 213,
+       "to": 226
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "cta",
+   "from": 1560,
+   "durationInFrames": 170,
+   "stamp": 106,
+   "lines": [
+    {
+     "key": "cta-0",
+     "show": "Welche Theorie glaubst du? Schreib die Nummer in die Kommentare. Folge für Teil 2.",
+     "from": 8,
+     "to": 122,
+     "words": [
+      {
+       "text": "Welche",
+       "from": 8,
+       "to": 17
+      },
+      {
+       "text": "Theorie",
+       "from": 17,
+       "to": 28
+      },
+      {
+       "text": "glaubst",
+       "from": 28,
+       "to": 39
+      },
+      {
+       "text": "du?",
+       "from": 39,
+       "to": 44
+      },
+      {
+       "text": "Schreib",
+       "from": 44,
+       "to": 55
+      },
+      {
+       "text": "die",
+       "from": 55,
+       "to": 61
+      },
+      {
+       "text": "Nummer",
+       "from": 61,
+       "to": 71
+      },
+      {
+       "text": "in",
+       "from": 71,
+       "to": 76
+      },
+      {
+       "text": "die",
+       "from": 76,
+       "to": 82
+      },
+      {
+       "text": "Kommentare.",
+       "from": 82,
+       "to": 96
+      },
+      {
+       "text": "Folge",
+       "from": 96,
+       "to": 105
+      },
+      {
+       "text": "für",
+       "from": 105,
+       "to": 111
+      },
+      {
+       "text": "Teil",
+       "from": 111,
+       "to": 118
+      },
+      {
+       "text": "2.",
+       "from": 118,
+       "to": 122
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
