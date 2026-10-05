@@ -2,7 +2,7 @@
 <html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}canvas{display:block}</style></head>
 <body><canvas id="c" width="1080" height="1920"></canvas>
 <script>
-// Daily analysis, 5 Oct 2026 (9:16, ~31 s). render(t) draws the frame at time t; scenes follow the voice-over timeline.
+// Daily analysis, 5 Oct 2026 (9:16, ~32 s, voice only). render(t) draws the frame at time t; scenes follow the voice-over timeline.
 // Figures come from the daily analysis text (status 05.10.2026). Key text stays inside TikTok's safe area (y 230–1500).
 const TL = window.TIMELINE; // { hook, ma, q3, hist, key, macro, cta: {start,end}, total }
 const W = 1080, H = 1920, TAU = Math.PI * 2;
@@ -97,7 +97,7 @@ function chrome(t) {
   ctx.fillStyle = C.orange; ctx.fillText('CAPITAL', 122 + ctx.measureText('APEX WAVE ').width, 132);
   text('TAGESANALYSE · 05.10.2026', W - 60, 132, `700 26px ${MONO}`, C.muted, 'right');
   ctx.fillStyle = C.orange; ctx.fillRect(0, 0, W * clamp(t / TL.total), 8);
-  text('Keine Anlageberatung · Daten Stand 05.10.2026', W / 2, 1585, `400 28px ${SANS}`, 'rgba(138,147,163,0.85)', 'center');
+  text('Keine Anlageberatung · Datenstand: 05.10.2026', W / 2, 1585, `400 28px ${SANS}`, 'rgba(138,147,163,0.85)', 'center');
 }
 
 /* ---------- 1: hook ---------- */
@@ -163,7 +163,7 @@ function sQ3(t, s) {
 function sHist(t, s) {
   const lt = t - s.a;
   text('DIESES SIGNAL FRÜHER', W / 2, 380, `700 44px ${MONO}`, C.hi, 'center', eOut(prog(lt, 0, 0.3)));
-  const cards = [[2020, 'ein Vielfaches', C.green, 0.15, 1], [2025, 'nur 97 Tage', C.red, 2.0, 0.18]];
+  const cards = [[2020, 'ein Vielfaches', C.green, 0.15, 1], [2025, 'nur 97 Tage gehalten', C.red, 2.0, 0.18]];
   cards.forEach(([year, label, col, at, size], i) => {
     const u = eOut(prog(lt, at, at + 0.45)), x = 90, y = 470 + i * 520;
     ctx.save(); ctx.translate((1 - u) * (i ? W : -W), 0);
@@ -185,6 +185,7 @@ function sKey(t, s) {
   const q = eBack(prog(lt, 0.15, 0.5));
   ctx.save(); ctx.translate(W / 2, 520); ctx.scale(lerp(0.7, 1, clamp(q)), lerp(0.7, 1, clamp(q)));
   text('Hält die 79.500 $?', 0, 0, `700 92px ${SERIF}`, C.text, 'center', clamp(q)); ctx.restore();
+  text('DIE MARKE AUS DER 50-TAGE-LINIE', W / 2, 600, `700 30px ${MONO}`, C.muted, 'center', eOut(prog(lt, 0.4, 0.7)));
   hline(Y(L), X(0), X(1), C.orange, eOut(prog(lt, 0.2, 0.8)), 6, [20, 12]);
   ctx.globalAlpha = 0.12 * eOut(prog(lt, 0.3, 0.8)); ctx.fillStyle = C.orange; ctx.fillRect(X(0), Y(L) - 30, X(1) - X(0), 60); ctx.globalAlpha = 1;
   // price pulls back to the zone
@@ -203,7 +204,7 @@ function sKey(t, s) {
 function sMacro(t, s) {
   const lt = t - s.a;
   text('UND SONST?', W / 2, 380, `700 44px ${MONO}`, C.hi, 'center', eOut(prog(lt, 0, 0.25)));
-  const tiles = [['ETH', '≈ 2.700 $', '3.000 $ im Visier', C.blue, TL.macro.start - s.a], ['US-JOBS SEPTEMBER', '+29.000', 'Arbeitslosigkeit 4,2 %', C.red, TL.macro.start - s.a + 1.4], ['10-J. US-RENDITE', '5,34 %', 'Schlüssel: unter 5 % halten', C.orange, TL.macro.start - s.a + 2.3]];
+  const tiles = [['ETH', '≈ 2.700 $', '3.000 $ im Visier', C.blue, TL.macro.start - s.a], ['US-JOBS SEPTEMBER', '+29.000', 'Arbeitslosenquote 4,2 %', C.red, TL.macro.start - s.a + 1.4], ['RENDITE 10-JÄHRIGE US-ANLEIHEN', '5,34 %', 'Wichtige Marke: 5 %', C.orange, TL.macro.start - s.a + 2.3]];
   tiles.forEach(([lab, big, sub, col, at], i) => {
     const u = eOut(prog(lt, at, at + 0.4)), y = 470 + i * 330;
     ctx.save(); ctx.translate((1 - u) * W * 0.8, 0);

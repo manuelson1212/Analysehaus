@@ -1,5 +1,5 @@
 """Builds the daily analysis video (5 Oct 2026): voice clips -> timeline -> frames -> soundtrack -> MP4.
-Usage: python build.py --piper <piper-bin> --voice <de-thorsten-low.onnx> --work <scratch dir> [--render <render.mjs with Playwright>]"""
+Usage: python build.py --piper <piper-bin> --voice <de-thorsten-low.onnx> --work <scratch dir> --python <python with numpy>\nPronunciation fixes use Piper's phoneme syntax [[ ... ]] in voiceover-lines.json."""
 import argparse, json, os, shutil, subprocess
 
 ap = argparse.ArgumentParser()
@@ -29,11 +29,10 @@ print({k: v for k, v in tl.items()})
 
 shutil.rmtree(f'{W}/frames', ignore_errors=True)
 run(a.node, a.render or f'{here}/render.mjs', f'{here}/timeline.json', f'{W}/frames')
+# Voice only (no music, no effects): audio.py places the clips on the timeline and writes the voice stem.
 run(a.python, f'{here}/audio.py', f'{here}/timeline.json', f'{W}/vo', f'{W}/mix-raw.wav')
-run('ffmpeg', '-v', 'error', '-y', '-i', f'{W}/mix-raw.wav', '-af', 'loudnorm=I=-14:TP=-1.5:LRA=9', '-ar', '44100', f'{W}/mix.wav')
-run('ffmpeg', '-v', 'error', '-y', '-i', f'{W}/mix-raw-music.wav', '-af', 'loudnorm=I=-16:TP=-1.5:LRA=9', '-ar', '44100', f'{W}/music.wav')
-for audio, name in [('mix.wav', f'{NAME}.mp4'), ('music.wav', f'{NAME}-nur-musik.mp4')]:
-    run('ffmpeg', '-v', 'error', '-y', '-framerate', '30', '-i', f'{W}/frames/f%04d.jpg', '-i', f'{W}/{audio}', '-c:v', 'libx264', '-profile:v', 'main', '-level:v', '4.0',
-        '-preset', 'slow', '-crf', '20', '-maxrate', '6M', '-bufsize', '12M', '-pix_fmt', 'yuv420p', '-g', '60', '-c:a', 'aac', '-b:a', '160k', '-ar', '44100', '-ac', '2',
-        '-shortest', '-movflags', '+faststart', '-tag:v', 'avc1', f'{here}/{name}')
+run('ffmpeg', '-v', 'error', '-y', '-i', f'{W}/mix-raw-voice.wav', '-af', 'loudnorm=I=-14:TP=-1.5:LRA=7', '-ar', '44100', f'{W}/voice.wav')
+run('ffmpeg', '-v', 'error', '-y', '-framerate', '30', '-i', f'{W}/frames/f%04d.jpg', '-i', f'{W}/voice.wav', '-c:v', 'libx264', '-profile:v', 'main', '-level:v', '4.0',
+    '-preset', 'slow', '-crf', '20', '-maxrate', '6M', '-bufsize', '12M', '-pix_fmt', 'yuv420p', '-g', '60', '-c:a', 'aac', '-b:a', '160k', '-ar', '44100', '-ac', '2',
+    '-shortest', '-movflags', '+faststart', '-tag:v', 'avc1', f'{here}/{NAME}.mp4')
 print('done')

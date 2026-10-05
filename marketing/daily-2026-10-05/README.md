@@ -1,7 +1,6 @@
-# Tagesanalyse 5. Oktober 2026 – TikTok/Reel (9:16, ca. 31 s)
+# Tagesanalyse 5. Oktober 2026 – TikTok/Reel (9:16, ca. 33 s, nur Stimme)
 
-- `apex-wave-tagesanalyse-2026-10-05.mp4`: fertiges Video mit deutscher Stimme und Musik (H.264, 1080×1920, 30 fps, −14 LUFS).
-- `apex-wave-tagesanalyse-2026-10-05-nur-musik.mp4`: gleiches Video nur mit Musik, zum Einsprechen mit eigener Stimme.
+- `apex-wave-tagesanalyse-2026-10-05.mp4`: fertiges Video nur mit deutscher Stimme, ohne Musik und Effekte (H.264, 1080×1920, 30 fps, −14 LUFS).
 
 ## Szenen
 
@@ -21,4 +20,5 @@ Die Zahlen stammen aus der Tagesanalyse (Stand 05.10.2026). Hinweis „Keine Anl
 
 `python build.py --piper <piper> --voice de-thorsten-low.onnx --work <Arbeitsordner> [--render <render.mjs mit Playwright>]`
 Sprechertext in `voiceover-lines.json`, Bildtexte in `scene.html`. Zahlen werden für die Stimme ausgeschrieben.
+Aussprache-Korrekturen stehen als Lautschrift in `[[ ... ]]` (Bitcoin, Dollar, Renditen, Elliott-Wellen-Analyse, Apex Wave, Bio).
 Stimme: Piper „de-thorsten-low“ (rhasspy/piper, Release v0.0.2). Sonst wie `../promo-15s/README.md`.
